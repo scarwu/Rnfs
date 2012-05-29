@@ -1,2 +1,7 @@
 .project
 .setting
+Hiphop/Source
+Hiphop/Bin
+Logs/*
+Cache/*
+Config/Database.php
