@@ -5,7 +5,7 @@ REBORN_BIN=`pwd`/Bin
 cd $REBORN_BIN
 
 echo "----- Run Server --------------------------------------"
-./bin/program \
+./program \
 	-m server \
-	-p 8080 \
+	-p 3000 \
 	-v "Server.DefaultDocument=index.php"
