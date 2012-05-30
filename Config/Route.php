@@ -1,45 +1,81 @@
 <?php
-
 /**
- * Route Rule Setting
+ * Reborn Route Rule Config
+ * 
+ * @package		Reborn File Services
+ * @author		ScarWu
+ * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
+ * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
+ * @link		http://github.com/scarwu/Reborn
+ */
+ 
+/**
+ * GET Method Route Rules
  * 
  * @var array
  */
 $Route['get'] = array(
-	array('/:string', function($result) {
-		\CLx\Core\Loader::Controller($result[0], 'read');
-	}),
-	array('/:string', function($result) {
-		\CLx\Core\Loader::Controller($result[0], 'index');
+	array('^/(\w+)((?:/\w+)+)?', function($result) {
+		$result[1] = isset($result[1]) ? $result[1] : NULL;
+		
+		if(!\CLx\Core\Loader::Controller($result[0], 'read', $result[1]))
+			\CLx\Core\Response::HTTPCode(503);
+	}, TRUE),
+	array('/', function() {
+		\CLx\Core\Loader::View('index');
 	}),
 	array('default', function() {
-		\CLx\Core\Loader::Controller('service', 'index');
+		\CLx\Core\Response::HTTPCode(404);
 	})
 );
 
+/**
+ * POST Method Route Rules
+ * 
+ * @var array
+ */
 $Route['post'] = array(
-	array('/:string', function($result) {
-		\CLx\Core\Loader::Controller($result[0], 'create');
-	}),
+	array('^/(\w+)((?:/\w+)+)?', function($result) {
+		isset($result[1]) ? $result[1] : NULL;
+		
+		if(!\CLx\Core\Loader::Controller($result[0], 'create', $result[1]))
+			\CLx\Core\Response::HTTPCode(503);
+	}, TRUE),
 	array('default', function() {
-		\CLx\Core\Loader::Controller('service', 'index');
+		\CLx\Core\Response::HTTPCode(404);
 	})
 );
 
+/**
+ * PUT Method Route Rules
+ * 
+ * @var array
+ */
 $Route['put'] = array(
-	array('/:string', function($result) {
-		\CLx\Core\Loader::Controller($result[0], 'update');
-	}),
+	array('^/(\w+)((?:/\w+)+)?', function($result) {
+		isset($result[1]) ? $result[1] : NULL;
+		
+		if(!\CLx\Core\Loader::Controller($result[0], 'update', $result[1]))
+			\CLx\Core\Response::HTTPCode(503);
+	}, TRUE),
 	array('default', function() {
-		\CLx\Core\Loader::Controller('service', 'index');
+		\CLx\Core\Response::HTTPCode(404);
 	})
 );
 
+/**
+ * DELETE Method Route Rules
+ * 
+ * @var array
+ */
 $Route['delete'] = array(
-	array('/:string', function($result) {
-		\CLx\Core\Loader::Controller($result[0], 'delete');
-	}),
+	array('^/(\w+)((?:/\w+)+)?', function($result) {
+		isset($result[1]) ? $result[1] : NULL;
+		
+		if(!\CLx\Core\Loader::Controller($result[0], 'delete', $result[1]))
+			\CLx\Core\Response::HTTPCode(503);
+	}, TRUE),
 	array('default', function() {
-		\CLx\Core\Loader::Controller('service', 'index');
+		\CLx\Core\Response::HTTPCode(404);
 	})
 );
