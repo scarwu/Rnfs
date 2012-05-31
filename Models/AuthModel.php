@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class Auth extends \CLx\Core\Model {
+class AuthModel extends \CLx\Core\Model {
 	private $timeout;
 	
 	public function __construct() {

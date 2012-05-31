@@ -9,12 +9,12 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class statusCode {
+class StatusCode {
 	/**--------------------------------------------------
 	 * Error Code
 	 * --------------------------------------------------
 	 */
-	private static $errorCode = array(
+	private static $_error_code = array(
 		// Normal
 		1000 => array(200, 'OK'),
 		
@@ -40,18 +40,20 @@ class statusCode {
 		4000 => array(403, 'Capacity is full'),
 		4001 => array(403, 'File is over upload limit')
 	);
-	private static $isError = FALSE;
-	private static $code = 1000;
+	private static $_is_error = FALSE;
+	private static $_code = 1000;
+	
+	private function __construct() {}
 	
 	/**--------------------------------------------------
 	 * Set Status Code
 	 * --------------------------------------------------
 	 */
-	public static function setStatus($code) {
-		if(FALSE == self::$isError && 1000 != $code && isset(self::$errorCode[$code])) {
-			self::$isError = TRUE;
-			self::$code = $code;
-			response::sendHeader(self::$errorCode[$code][0]);
+	public static function SetStatus($code) {
+		if(FALSE == self::$_is_error && 1000 != $code && isset(self::$_error_code[$code])) {
+			self::$_is_rror = TRUE;
+			self::$_code = $code;
+			\CLx\Core\Response::HTTPCode(self::$_error_code[$code][0]);
 		}
 	}
 	
@@ -59,14 +61,14 @@ class statusCode {
 	 * Get Status Code
 	 * --------------------------------------------------
 	 */
-	public static function getStatus() {
-		if(1000 == self::$code)
-			response::sendHeader(200);
+	public static function GetStatus() {
+		if(1000 == self::$_code)
+			\CLx\Core\Response::HTTPCode(200);
 		
 		return array(
-			'http' => self::$errorCode[self::$code][0],
-			'code' => self::$code,
-			'msg' => self::$errorCode[self::$code][1]
+			'http' => self::$_error_code[self::$_code][0],
+			'code' => self::$_code,
+			'msg' => self::$_error_code[self::$_code][1]
 		);
 	}
 	
@@ -74,9 +76,9 @@ class statusCode {
 	 * Get Status List
 	 * --------------------------------------------------
 	 */
-	public static function getStatusList() {
+	public static function GetStatusList() {
 		$list = array();
-		foreach((array)self::$errorCode as $key => $value)
+		foreach((array)self::$_error_code as $key => $value)
 			array_push($list, array(
 				'code' => $key,
 				'http' => $value[0],
@@ -90,7 +92,7 @@ class statusCode {
 	 * Is Error
 	 * --------------------------------------------------
 	 */
-	public static function isError() {
-		return 1000 != self::$code;
+	public static function IsError() {
+		return 1000 != self::$_code;
 	}
 }

@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class File extends \CLx\Core\Controller {
+class FileController extends \CLx\Core\Controller {
 	private $locate;
 	private $encode;
 

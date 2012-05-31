@@ -9,23 +9,25 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class Auth extends \CLx\Core\Controller {
+class AuthController extends \CLx\Core\Controller {
 	
 	public function __construct() {
 		parent::__construct();
-		// Load Library
-		$this->load->sysLib('db');
 		// Load Extend Library
-		$this->load->extLib('statusCode');
+		\CLx\Core\Loader::Library('StatusCode');
 		// Load Model
-		$this->load->model('authModel');
+		$this->AuthModel = \CLx\Core\Loader::Model('Auth');
+	}
+
+	public function read() {
+		
 	}
 
 	/**
 	 * Create Token
 	 */
 	public function create() {
-		$params = request::params();
+		$params = \CLx\Core\Request::params();
 		
 		// Get params detail
 		$username = isset($params['username']) ? $params['username'] : NULL;

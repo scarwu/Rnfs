@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class Sync extends \CLx\Core\Controller {
+class SyncController extends \CLx\Core\Controller {
 	public function __construct() {
 		parent::__construct();
 		// Load Config

@@ -8,3 +8,5 @@
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
  * @link		http://github.com/scarwu/Reborn
  */
+ 
+$Config = array();

@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class userModel extends \CLx\Core\Model {
+class UserModel extends \CLx\Core\Model {
 	public function __construct() {
 		parent::__construct();
 		// Load Extend Library

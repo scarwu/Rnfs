@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class User extends \CLx\Core\Controller {
+class UserController extends \CLx\Core\Controller {
 	public function __construct() {
 		parent::__construct();
 		// Load Config

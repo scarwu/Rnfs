@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class File extends \CLx\Core\Model {
+class FileModel extends \CLx\Core\Model {
 	public function __construct() {
 		parent::__construct();
 		// Load Config

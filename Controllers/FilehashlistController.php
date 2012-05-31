@@ -1,6 +1,6 @@
 <?php
 /**
- * Reborn Filehash Controller
+ * Reborn Filehashlist Controller
  * 
  * @package		Reborn File Services
  * @author		ScarWu
@@ -9,8 +9,8 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class Filehash extends \CLx\Core\Controller {
-
+class FilehashlistController extends \CLx\Core\Controller {
+	
 	public function __construct() {
 		parent::__construct();
 		// Load Config
@@ -31,41 +31,19 @@ class Filehash extends \CLx\Core\Controller {
 		$token = isset($params['token']) ? $params['token'] : NULL;
 
 		if($username = $this->authModel->updateToken($token)) {
-			$localHash = isset($params['hash']) ? $params['hash'] : NULL;
-			
 			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
 
 			if(!file_exists(FILE_LOCATE))
 				mkdir(FILE_LOCATE, 0755, TRUE);
-
+			
 			$path = $this->fileModel->parsePath($segments);
 			
 			if(file_exists(FILE_LOCATE . $path)) {
-				if(is_dir(FILE_LOCATE . $path)) {
-					$list = $this->fileModel->getFileHashList($path);
-					$jsonlist = '';
-					foreach($list as $item) {
-						if(isset($item['hash']))
-							$jsonlist .= sprintf('{"hash":"%s","path":"%s"},', $item['hash'], $item['path']);
-						else
-							$jsonlist .= sprintf('{"path":"%s"},', $item['path']);
-					}
-					$jsonlist = sprintf('[%s]', trim($jsonlist, ','));
-					$serverHash = hash('md5', $jsonlist);
-				}
-				else
-					$serverHash = md5_file(FILE_LOCATE . $path);
-				
-				// Compare Hash
-				if($localHash != NULL)
-					$sync = $localHash == $serverHash;
-				else
-					$sync = FALSE;
-				
+				$list = $this->fileModel->getFileHashList($path);
+
 				$this->view->json(array(
 					'status' => statusCode::getStatus(),
-					'sync' => $sync,
-					'hash' => $serverHash
+					'list' => $list
 				));
 			}
 			else {

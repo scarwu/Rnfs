@@ -1,6 +1,6 @@
 <?php
 /**
- * Reborn Filehashlist Controller
+ * Reborn File Information Controller
  * 
  * @package		Reborn File Services
  * @author		ScarWu
@@ -9,8 +9,8 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-class Filehashlist extends \CLx\Core\Controller {
-	
+class FileinfoController extends \CLx\Core\Controller {
+
 	public function __construct() {
 		parent::__construct();
 		// Load Config
@@ -37,14 +37,16 @@ class Filehashlist extends \CLx\Core\Controller {
 				mkdir(FILE_LOCATE, 0755, TRUE);
 			
 			$path = $this->fileModel->parsePath($segments);
-			
-			if(file_exists(FILE_LOCATE . $path)) {
-				$list = $this->fileModel->getFileHashList($path);
 
-				$this->view->json(array(
-					'status' => statusCode::getStatus(),
-					'list' => $list
-				));
+			if(file_exists($currentPath = FILE_LOCATE . $path)) {
+				$info = array(
+					'path' => iconv(mb_detect_encoding($path), $this->fileConfig['encode'], $path),
+					'date' => @filectime($currentPath),
+					'size' => @filesize($currentPath),
+					'type' => @filetype($currentPath)
+				);
+
+				$this->view->json(array('status' => statusCode::getStatus(), 'info' => $info));
 			}
 			else {
 				statusCode::setStatus(3004);
