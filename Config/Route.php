@@ -36,7 +36,7 @@ $Route['get'] = array(
  */
 $Route['post'] = array(
 	array('^/(\w+)((?:/\w+)+)?', function($result) {
-		isset($result[1]) ? $result[1] : NULL;
+		$result[1] = isset($result[1]) ? $result[1] : NULL;
 		
 		if(!\CLx\Core\Loader::Controller($result[0], 'create', $result[1]))
 			\CLx\Core\Response::HTTPCode(503);
@@ -53,7 +53,7 @@ $Route['post'] = array(
  */
 $Route['put'] = array(
 	array('^/(\w+)((?:/\w+)+)?', function($result) {
-		isset($result[1]) ? $result[1] : NULL;
+		$result[1] = isset($result[1]) ? $result[1] : NULL;
 		
 		if(!\CLx\Core\Loader::Controller($result[0], 'update', $result[1]))
 			\CLx\Core\Response::HTTPCode(503);
@@ -70,7 +70,7 @@ $Route['put'] = array(
  */
 $Route['delete'] = array(
 	array('^/(\w+)((?:/\w+)+)?', function($result) {
-		isset($result[1]) ? $result[1] : NULL;
+		$result[1] = isset($result[1]) ? $result[1] : NULL;
 		
 		if(!\CLx\Core\Loader::Controller($result[0], 'delete', $result[1]))
 			\CLx\Core\Response::HTTPCode(503);

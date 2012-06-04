@@ -51,7 +51,7 @@ class StatusCode {
 	 */
 	public static function SetStatus($code) {
 		if(FALSE == self::$_is_error && 1000 != $code && isset(self::$_error_code[$code])) {
-			self::$_is_rror = TRUE;
+			self::$_is_error = TRUE;
 			self::$_code = $code;
 			\CLx\Core\Response::HTTPCode(self::$_error_code[$code][0]);
 		}

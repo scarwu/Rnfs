@@ -19,49 +19,45 @@ class AuthController extends \CLx\Core\Controller {
 		$this->AuthModel = \CLx\Core\Loader::Model('Auth');
 	}
 
-	public function read() {
-		
-	}
-
 	/**
 	 * Create Token
 	 */
 	public function create() {
-		$params = \CLx\Core\Request::params();
+		$params = \CLx\Core\Request::Params();
 		
 		// Get params detail
 		$username = isset($params['username']) ? $params['username'] : NULL;
 		$password = isset($params['password']) ? $params['password'] : NULL;
 		
-		if($token = $this->authModel->genToken($username, $password))
-			$this->view->json(array('status' => statusCode::getStatus(), 'token' => $token));
+		if($token = $this->AuthModel->genToken($username, $password))
+			\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus(), 'token' => $token));
 		else
-			$this->view->json(array('status' => statusCode::getStatus()));
+			\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus()));
 	}
 	
 	/**
 	 * Update Token Alive Time
 	 */
 	public function update() {
-		$params = request::params();
+		$params = \CLx\Core\Request::Params();
 		
 		// Get params detail
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
-		$this->authModel->updateToken($token);
-		$this->view->json(array('status' => statusCode::getStatus()));
+		$this->AuthModel->updateToken($token);
+		\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus()));
 	}
 	
 	/**
 	 * Delete Token
 	 */
 	public function delete() {
-		$params = request::params();
+		$params = \CLx\Core\Request::Params();
 		
 		// Get params detail
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
-		$this->authModel->deleteToken($token);
-		$this->view->json(array('status' => statusCode::getStatus()));
+		$this->AuthModel->deleteToken($token);
+		\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus()));
 	}
 }

@@ -13,21 +13,21 @@ class UserModel extends \CLx\Core\Model {
 	public function __construct() {
 		parent::__construct();
 		// Load Extend Library
-		$this->load->extLib('statusCode');
+		\CLx\Core\Loader::Library('StatusCode');
 	}
 	
 	// Create User
 	public function createUser($username, $password, $email) {
 		if(NULL == $username) {
-			statusCode::setStatus(2001);
+			StatusCode::SetStatus(2001);
 			return FALSE;
 		}
 		elseif(NULL == $password) {
-			statusCode::setStatus(2002);
+			StatusCode::SetStatus(2002);
 			return FALSE;
 		}
 		elseif(NULL == $email) {
-			statusCode::setStatus(2003);
+			StatusCode::SetStatus(2003);
 			return FALSE;
 		}
 		
@@ -36,18 +36,18 @@ class UserModel extends \CLx\Core\Model {
 		$regeEmail = '/^([\w-\.]+)@((?:[\w]+\.)+)([a-zA-Z]+)$/';
 		
 		if(!preg_match($regeUser, $username) || !preg_match($regeEmail, $email)) {
-			statusCode::setStatus(3002);
+			StatusCode::SetStatus(3002);
 			return FALSE;
 		}
 		
 		if($this->isUserExist($username)) {
-			statusCode::setStatus(3003);
+			StatusCode::SetStatus(3003);
 			return FALSE;
 		}
 		
 		$sql = 'INSERT INTO `accounts` SET `username`=:un, `password`=:pw, `email`=:em';
 		$params = array(':un' => $username, ':pw' => $password, ':em' => $email);
-		if($this->db->query($sql, $params)->insertId())
+		if($this->DB->Query($sql, $params)->InsertId())
 			return TRUE;
 		else
 			return FALSE;
@@ -56,23 +56,23 @@ class UserModel extends \CLx\Core\Model {
 	// Update User Password
 	public function updateUserPassword($username, $oldpassword, $newpassword) {
 		if(NULL == $username) {
-			statusCode::setStatus(2001);
+			StatusCode::SetStatus(2001);
 			return FALSE;
 		}
 		elseif(NULL == $oldpassword) {
-			statusCode::setStatus(2002);
+			StatusCode::SetStatus(2002);
 			return FALSE;
 		}
 		elseif(NULL == $newpassword) {
-			statusCode::setStatus(2002);
+			StatusCode::SetStatus(2002);
 			return FALSE;
 		}
 
 		// Check update success
 		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:opw';
 		$params = array(':un' => $username, ':opw' => $oldpassword);
-		if(0 == count($this->db->query($sql, $params)->asAry())) {
-			statusCode::setStatus(3002);
+		if(0 == count($this->DB->Query($sql, $params)->AsArray())) {
+			StatusCode::SetStatus(3002);
 			return FALSE;
 		}
 
@@ -83,13 +83,13 @@ class UserModel extends \CLx\Core\Model {
 			':un' => $username,
 			':opw' => $oldpassword
 		);
-		$this->db->query($sql, $params);
+		$this->DB->Query($sql, $params);
 		
 		// Check update success
 		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:npw';
 		$params = array(':un' => $username, ':npw' => $newpassword);
-		if(0 == count($this->db->query($sql, $params)->asAry())) {
-			statusCode::setStatus(3002);
+		if(0 == count($this->DB->Query($sql, $params)->AsArray())) {
+			StatusCode::SetStatus(3002);
 			return FALSE;
 		}
 
@@ -100,7 +100,7 @@ class UserModel extends \CLx\Core\Model {
 		if(NULL != $username) {
 			$sql = 'SELECT username FROM `accounts` WHERE `username`=:un';
 			$params = array(':un' => $username);
-			return 0 != count($this->db->query($sql, $params)->asAry()) ? TRUE : FALSE;
+			return 0 != count($this->DB->Query($sql, $params)->AsArray()) ? TRUE : FALSE;
 		}
 		return FALSE;
 	}
@@ -108,22 +108,22 @@ class UserModel extends \CLx\Core\Model {
 	// Delete User
 	public function deleteUser($username, $password) {
 		if(NULL == $username) {
-			statusCode::setStatus(2001);
+			StatusCode::SetStatus(2001);
 			return FALSE;
 		}
 		elseif(NULL == $password) {
-			statusCode::setStatus(2002);
+			StatusCode::SetStatus(2002);
 			return FALSE;
 		}
 
 		if(!$this->isUserExist($username)) {
-			statusCode::setStatus(3001);
+			StatusCode::SetStatus(3001);
 			return FALSE;
 		}
 		
 		$sql = 'DELETE FROM `accounts` WHERE `username`=:un AND `password`=:pw';
 		$params = array(':un' => $username, ':pw' => $password);
-		$this->db->query($sql, $params);
+		$this->DB->Query($sql, $params);
 		if(!$this->isUserExist($username))
 			return TRUE;
 	}
@@ -131,6 +131,6 @@ class UserModel extends \CLx\Core\Model {
 	public function getUserUseUsername($username) {
 		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un';
 		$params = array(':un' => $username);
-		return $this->db->query($sql, $params)->asAry();
+		return $this->DB->Query($sql, $params)->AsArray();
 	}
 }
