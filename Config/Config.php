@@ -10,12 +10,12 @@
  */
 
 $Config['auth'] = array(
-	'timeout' => 300,
+	'timeout' => 30000,
 	'connect' => 25
 );
 
 $Config['file'] = array(
-	'locate' => TEMP_DIR . 'nanotube' . DIRECTORY_SEPARATOR,
+	'locate' => TEMP_DIR . 'reborn/',
 	'encode' => PHP_OS == 'Linux' ? 'UTF-8' : 'BIG5',
 	'size' => 256 * 1024 * 1024,
 	'capacity' => 512 * 1024 * 1024
@@ -23,5 +23,5 @@ $Config['file'] = array(
 
 $Config['sync'] = array(
 	'timeout' => 180,
-	'locate' => TEMP_DIR . 'nanotube.sync' . DIRECTORY_SEPARATOR
+	'locate' => TEMP_DIR . 'reborn_sync/'
 );

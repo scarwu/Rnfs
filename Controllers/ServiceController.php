@@ -17,7 +17,7 @@ class ServiceController extends \CLx\Core\Controller {
 	public function __construct() {
 		parent::__construct();
 		// Load Library
-		\CLx\Core\Loader::Library('StatusCode');
+		\CLx\Core\Loader::library('StatusCode');
 	}
 	
 	/**
@@ -39,11 +39,11 @@ class ServiceController extends \CLx\Core\Controller {
 		sort($list);
 
 		// Send Json
-		\CLx\Core\Response::ToJSON(array(
-			'status' => StatusCode::GetStatus(),
+		\CLx\Core\Response::toJSON(array(
+			'status' => StatusCode::getStatus(),
 			'list' => $list,
 			'usage' => $Usage,
-			'statuscode' => StatusCode::GetStatusList()
+			'statuscode' => StatusCode::getStatusList()
 		));
 	}
 }

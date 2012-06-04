@@ -10,20 +10,20 @@
  */
 
 class UserController extends \CLx\Core\Controller {
+	
 	public function __construct() {
 		parent::__construct();
 		// Load Config
-		$this->authConfig = $this->load->config('auth');
-		$this->fileConfig = $this->load->config('file');
+		$this->auth_config = \CLx\Core\Loader::Config('Config', 'auth');
+		$this->file_config = \CLx\Core\Loader::Config('Config', 'file');
 		// Load Library
-		$this->load->sysLib('db');
-		$this->load->sysLib('event');
+		// $this->load->sysLib('db');
+		// $this->load->sysLib('event');
 		// Load Extend Library
-		$this->load->extLib('statusCode');
+		\CLx\Core\Loader::Library('StatusCode');
 		// Load Model
-		$this->load->model('authModel');
-		$this->load->model('fileModel');
-		$this->load->model('userModel');
+		$this->auth_model = \CLx\Core\Loader::Model('Auth');
+		$this->user_model = \CLx\Core\Loader::Model('User');
 	}
 
 	/**
@@ -32,20 +32,19 @@ class UserController extends \CLx\Core\Controller {
 	 * Input: 
 	 * Output:
 	 */
-	public function create() {
-		$segments = request::segments();
-		$params = request::params();
+	public function create($segments) {
+		$params = \CLx\Core\Request::Params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$password = isset($params['password']) ? hash('md5', $params['password']) : NULL;
 		$email = isset($params['email']) ? $params['email'] : NULL;
 
-		if($this->userModel->createUser($username, $password, $email)) {
+		if($this->user_model->createUser($username, $password, $email)) {
 			// Trigger event
-			event::trigger('userCreate');
+			\CLx\Core\Event::trigger('userCreate');
 		}
 		
-		$this->view->json(array('status' => statusCode::getStatus()));
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
@@ -54,35 +53,34 @@ class UserController extends \CLx\Core\Controller {
 	 * Input: 
 	 * Output:
 	 */
-	public function read() {
-		$segments = request::segments();
-		$params = request::params();
+	public function read($segments) {
+		$params = \CLx\Core\Request::Params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
-			statusCode::setStatus(2001);
-		elseif($username != $this->authModel->updateToken($token))
-			statusCode::setStatus(3000);
+			StatusCode::setStatus(2001);
+		elseif($username != $this->auth_model->updateToken($token))
+			StatusCode::setStatus(3000);
 		
-		if(!statusCode::isError()) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
+		if(!StatusCode::isError()) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 
 			if(!file_exists(FILE_LOCATE))
 				mkdir(FILE_LOCATE, 0755, TRUE);
 			
-			$result = $this->userModel->getUserUseUsername($username);
-			$this->view->json(array(
-				'status' => statusCode::getStatus(),
+			$result = $this->user_model->getUserUseUsername($username);
+			\CLx\Core\Response::toJSON(array(
+				'status' => StatusCode::getStatus(),
 				'email' => $result[0]['email'],
-				'uploadLimit' => $this->fileConfig['size'],
-				'capacity' => $this->fileConfig['capacity'],
-				'used' => $this->fileModel->getAllFileSize('/')
+				'uploadLimit' => $this->file_config['size'],
+				'capacity' => $this->file_config['capacity'] //,
+				// 'used' => $this->fileModel->getAllFileSize('/')
 			));
 		}
 		else
-			$this->view->json(array('status' => statusCode::getStatus()));
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
@@ -91,29 +89,28 @@ class UserController extends \CLx\Core\Controller {
 	 * Input: 
 	 * Output:
 	 */
-	public function update() {
-		$segments = request::segments();
-		$params = request::params();
+	public function update($segments) {
+		$params = \CLx\Core\Request::Params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
-			statusCode::setStatus(2001);
-		elseif($username != $this->authModel->updateToken($token))
-			statusCode::setStatus(3000);
+			StatusCode::setStatus(2001);
+		elseif($username != $this->auth_model->updateToken($token))
+			StatusCode::setStatus(3000);
 		
-		if(!statusCode::isError()) {
+		if(!StatusCode::isError()) {
 			$newpassword = isset($params['newpassword']) ? hash('md5', $params['newpassword']) : NULL;
 			$oldpassword = isset($params['oldpassword']) ? hash('md5', $params['oldpassword']) : NULL;
 			
-			if($this->userModel->updateUserPassword($username, $oldpassword, $newpassword)) {
+			if($this->user_model->updateUserPassword($username, $oldpassword, $newpassword)) {
 				// Delete Token
-				$this->authModel->deleteDBTokenByTime($username, time()+$this->authConfig['timeout']);
+				$this->auth_model->deleteDBTokenByTime($username, time()+$this->auth_config['timeout']);
 			}
 		}
 
-		$this->view->json(array('status' => statusCode::getStatus()));
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
@@ -122,27 +119,26 @@ class UserController extends \CLx\Core\Controller {
 	 * Input: 
 	 * Output:
 	 */
-	public function delete() {
-		$segments = request::segments();
-		$params = request::params();
+	public function delete($segments) {
+		$params = \CLx\Core\Request::Params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
-			statusCode::setStatus(2001);
-		elseif($username != $this->authModel->updateToken($token))
-			statusCode::setStatus(3000);
+			StatusCode::setStatus(2001);
+		elseif($username != $this->auth_model->updateToken($token))
+			StatusCode::setStatus(3000);
 		
-		if(!statusCode::isError()) {
+		if(!StatusCode::isError()) {
 			$password = isset($params['password']) ? hash('md5', $params['password']) : NULL;
 			
-			if($this->userModel->deleteUser($username, $password)) {
+			if($this->user_model->deleteUser($username, $password)) {
 				// Trigger event
 				event::trigger('userDelete');
 			}
 		}
 		
-		$this->view->json(array('status' => statusCode::getStatus()));
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

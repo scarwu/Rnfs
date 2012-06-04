@@ -14,50 +14,50 @@ class AuthController extends \CLx\Core\Controller {
 	public function __construct() {
 		parent::__construct();
 		// Load Extend Library
-		\CLx\Core\Loader::Library('StatusCode');
+		\CLx\Core\Loader::library('StatusCode');
 		// Load Model
-		$this->AuthModel = \CLx\Core\Loader::Model('Auth');
+		$this->auth_model = \CLx\Core\Loader::model('Auth');
 	}
 
 	/**
 	 * Create Token
 	 */
 	public function create() {
-		$params = \CLx\Core\Request::Params();
+		$params = \CLx\Core\Request::params();
 		
 		// Get params detail
 		$username = isset($params['username']) ? $params['username'] : NULL;
 		$password = isset($params['password']) ? $params['password'] : NULL;
 		
-		if($token = $this->AuthModel->genToken($username, $password))
-			\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus(), 'token' => $token));
+		if($token = $this->auth_model->genToken($username, $password))
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus(), 'token' => $token));
 		else
-			\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus()));
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
 	 * Update Token Alive Time
 	 */
 	public function update() {
-		$params = \CLx\Core\Request::Params();
+		$params = \CLx\Core\Request::params();
 		
 		// Get params detail
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
-		$this->AuthModel->updateToken($token);
-		\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus()));
+		$this->auth_model->updateToken($token);
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
 	 * Delete Token
 	 */
 	public function delete() {
-		$params = \CLx\Core\Request::Params();
+		$params = \CLx\Core\Request::params();
 		
 		// Get params detail
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
-		$this->AuthModel->deleteToken($token);
-		\CLx\Core\Response::ToJSON(array('status' => StatusCode::GetStatus()));
+		$this->auth_model->deleteToken($token);
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

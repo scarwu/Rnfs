@@ -33,7 +33,7 @@ class SimFS {
 	 * 
 	 * @param string
 	 */
-	public static function Init($root, $config = NULL) {
+	public static function init($root, $config = NULL) {
 		self::$_root = $root;
 		self::$_config = $config;
 		
@@ -55,7 +55,7 @@ class SimFS {
 	/**
 	 * Record Write-back
 	 */
-	private static function Save() {
+	private static function save() {
 		$handle = fopen(self::$_root . '/record.json', 'w+');
 		fwrite($handle, json_encode(self::$_record));
 		fclose($handle);
@@ -64,7 +64,7 @@ class SimFS {
 	/**
 	 * Index Files
 	 */
-	public static function Index() {
+	public static function index() {
 		return json_encode(self::$_record);
 	}
 	
@@ -73,7 +73,7 @@ class SimFS {
 	 * 
 	 * @param string
 	 */
-	public static function Revert($path, $version) {
+	public static function revert($path, $version) {
 		// Check file is exists
 		if(!isset(self::$_record[$path]))
 			return FALSE;
@@ -88,13 +88,13 @@ class SimFS {
 			
 			// if unlink error return false and save record
 			if(!unlink(self::$_root . '/' . $hash)) {
-				self::Save();
+				self::save();
 				return FALSE;
 			}
 		}
 		
 		// Record Write-back
-		self::Save();
+		self::save();
 		return TRUE;
 	}
 	
@@ -104,7 +104,7 @@ class SimFS {
 	 * @param string
 	 * @param string
 	 */
-	public static function Move($sim_src, $sim_dest) {
+	public static function move($sim_src, $sim_dest) {
 		// Check Sim Source and Sim Destination
 		if(!isset(self::$_record[$sim_src]) || isset(self::$_record[$sim_dest]))
 			return FALSE;
@@ -115,7 +115,7 @@ class SimFS {
 		unset(self::$_record[$sim_src]);
 		
 		// Record Write-back
-		self::Save();
+		self::save();
 		return TRUE;
 	}
 	
@@ -125,7 +125,7 @@ class SimFS {
 	 * @param string
 	 * @param string
 	 */
-	public static function Create($real_src, $sim_dest) {
+	public static function create($real_src, $sim_dest) {
 		// Check Real Source and Sim Destination
 		if(!file_exists($real_src) || isset(self::$_record[$sim_dest]))
 			return FALSE;
@@ -150,7 +150,7 @@ class SimFS {
 		);
 		
 		// Record Write-back
-		self::Save();
+		self::save();
 		return TRUE;
 	}
 	
@@ -160,7 +160,7 @@ class SimFS {
 	 * @param string
 	 * @param string
 	 */
-	public static function Update($real_src, $sim_dest) {
+	public static function update($real_src, $sim_dest) {
 		// Check Real Source and Sim Destination
 		if(!file_exists($real_src) || !isset(self::$_record[$sim_dest]))
 			return FALSE;
@@ -182,7 +182,7 @@ class SimFS {
 		array_unshift(self::$_record[$sim_dest]['hash'], $hash);
 		
 		// Record Write-back
-		self::Save();
+		self::save();
 		return TRUE;
 	}
 	
@@ -192,7 +192,7 @@ class SimFS {
 	 * @param string
 	 * @param boolean
 	 */
-	public static function Read($path, $seek = NULL, $version = 0) {
+	public static function read($path, $seek = NULL, $version = 0) {
 		// Check path exists
 		if(!isset(self::$_record[$path]))
 			return FALSE;
@@ -225,7 +225,7 @@ class SimFS {
 	 * 
 	 * @param string
 	 */
-	public static function Delete($path) {
+	public static function delete($path) {
 		// Check Path is exists
 		if(!isset(self::$_record[$path]))
 			return FALSE;
@@ -239,7 +239,7 @@ class SimFS {
 		unset(self::$_record[$path]);
 		
 		// Record Write-back
-		self::Save();
+		self::save();
 		return TRUE;
 	}
 }

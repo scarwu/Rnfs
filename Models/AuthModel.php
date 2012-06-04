@@ -15,30 +15,30 @@ class AuthModel extends \CLx\Core\Model {
 	public function __construct() {
 		parent::__construct();
 		// Load Config
-		$this->_auth_config = \CLx\Core\Loader::Config('Config', 'auth');
+		$this->_auth_config = \CLx\Core\Loader::config('Config', 'auth');
 		// Load Library
-		\CLx\Core\Loader::Library('StatusCode');
+		\CLx\Core\Loader::library('StatusCode');
 	}
 
 	public function test() {
 		$sql = 'SELECT * FROM accounts';
-		return $this->DB->Query($sql)->AsArray();
+		return $this->_db->query($sql)->asArray();
 	}
 
 	// Token Generator
 	public function genToken($username, $password) {
 		if(NULL == $username) {
-			StatusCode::SetStatus(2001);
+			StatusCode::setStatus(2001);
 			return FALSE;
 		}
 		elseif(NULL == $password) {
-			StatusCode::SetStatus(2002);
+			StatusCode::setStatus(2002);
 			return FALSE;
 		}
 
 		// Check Username and Password is Valid
 		if(!$this->loginByUsernameAndPassword($username, $password)) {
-			StatusCode::SetStatus(3002);
+			StatusCode::setStatus(3002);
 			return FALSE;
 		}
 		
@@ -61,13 +61,13 @@ class AuthModel extends \CLx\Core\Model {
 	// Update Token
 	public function updateToken($token) {
 		if(NULL == $token) {
-			StatusCode::SetStatus(2000);
+			StatusCode::setStatus(2000);
 			return FALSE;
 		}
 		
 		$time = time();
 		if(!($result = $this->loginByToken($token, $time-$this->_auth_config['timeout']))) {
-			StatusCode::SetStatus(3000);
+			StatusCode::setStatus(3000);
 			return FALSE;
 		}
 		
@@ -78,7 +78,7 @@ class AuthModel extends \CLx\Core\Model {
 	// Delete Token
 	public function deleteToken($token) {
 		if(NULL == $token) {
-			StatusCode::SetStatus(2000);
+			StatusCode::setStatus(2000);
 			return FALSE;
 		}
 
@@ -87,7 +87,7 @@ class AuthModel extends \CLx\Core\Model {
 			return TRUE;
 		}
 		else {
-			StatusCode::SetStatus(3000);
+			StatusCode::setStatus(3000);
 			return FALSE;
 		}
 	}
@@ -99,7 +99,7 @@ class AuthModel extends \CLx\Core\Model {
 	private function loginByUsernameAndPassword($username, $password) {
 		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:pw';
 		$params = array(':un' => $username, ':pw' => hash('md5', $password));
-		return 1 == count($this->DB->Query($sql, $params)->AsArray()) ? TRUE : FALSE;
+		return 1 == count($this->_db->query($sql, $params)->asArray()) ? TRUE : FALSE;
 	}
 	
 	// Login By token
@@ -113,7 +113,7 @@ class AuthModel extends \CLx\Core\Model {
 			$params = array(':tk' => $token, ':ti' => $time);
 		}
 		
-		$result = $this->DB->Query($sql, $params)->AsArray();
+		$result = $this->_db->query($sql, $params)->asArray();
 		return 0 != count($result) ? $result : FALSE;
 	}
 		
@@ -121,27 +121,27 @@ class AuthModel extends \CLx\Core\Model {
 	private function updateDBTokenTimeByToken($token, $time) {
 		$sql = 'UPDATE `tokenlist` SET `timestamp`=:ti WHERE `token`=:tk';
 		$params = array('ti' => $time, ':tk' => $token);
-		$this->DB->Query($sql, $params);
+		$this->_db->query($sql, $params);
 	}
 	
 	// Delete Token By Token
 	private function deleteDBTokenByToken($token) {
 		$sql = 'DELETE FROM `tokenlist` WHERE `token`=:tk';
 		$params = array(':tk' => $token);
-		$this->DB->Query($sql, $params);
+		$this->_db->query($sql, $params);
 	}
 	
 	// Delete Token By Time
 	public function deleteDBTokenByTime($username, $time) {
 		$sql = 'DELETE FROM `tokenlist` WHERE `username`=:un AND `timestamp`<:ti';
 		$params = array(':un' => $username, ':ti' => $time);
-		$this->DB->Query($sql, $params);
+		$this->_db->query($sql, $params);
 	}
 	
 	// Create Token
 	private function createDBToken($token, $username, $time) {
 		$sql = 'INSERT INTO `tokenlist` SET `token`=:tk, `username`=:un, `timestamp`=:ti';
 		$params = array(':tk' => $token, ':un' => $username, ':ti' => $time);
-		$this->DB->Query($sql, $params);
+		$this->_db->query($sql, $params);
 	}
 }

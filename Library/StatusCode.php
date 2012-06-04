@@ -49,11 +49,11 @@ class StatusCode {
 	 * Set Status Code
 	 * --------------------------------------------------
 	 */
-	public static function SetStatus($code) {
+	public static function setStatus($code) {
 		if(FALSE == self::$_is_error && 1000 != $code && isset(self::$_error_code[$code])) {
 			self::$_is_error = TRUE;
 			self::$_code = $code;
-			\CLx\Core\Response::HTTPCode(self::$_error_code[$code][0]);
+			\CLx\Core\Response::setCode(self::$_error_code[$code][0]);
 		}
 	}
 	
@@ -61,9 +61,9 @@ class StatusCode {
 	 * Get Status Code
 	 * --------------------------------------------------
 	 */
-	public static function GetStatus() {
+	public static function getStatus() {
 		if(1000 == self::$_code)
-			\CLx\Core\Response::HTTPCode(200);
+			\CLx\Core\Response::setCode(200);
 		
 		return array(
 			'http' => self::$_error_code[self::$_code][0],
@@ -76,7 +76,7 @@ class StatusCode {
 	 * Get Status List
 	 * --------------------------------------------------
 	 */
-	public static function GetStatusList() {
+	public static function getStatusList() {
 		$list = array();
 		foreach((array)self::$_error_code as $key => $value)
 			array_push($list, array(
@@ -92,7 +92,7 @@ class StatusCode {
 	 * Is Error
 	 * --------------------------------------------------
 	 */
-	public static function IsError() {
+	public static function isError() {
 		return 1000 != self::$_code;
 	}
 }
