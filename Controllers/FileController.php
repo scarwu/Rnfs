@@ -10,327 +10,343 @@
  */
 
 class FileController extends \CLx\Core\Controller {
-	private $locate;
-	private $encode;
 
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->fileConfig = $this->load->config('file');
+		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+
 		// Load Library
-		$this->load->sysLib('db');
-		$this->load->sysLib('event');
-		// Load Extend Library
-		$this->load->extLib('statusCode');
+		\CLx\Core\Loader::library('StatusCode');
+		\CLx\Core\Loader::library('SimFS');
+		
 		// Load Model
-		$this->load->model('authModel');
-		$this->load->model('fileModel');
+		$this->auth_model = \CLx\Core\Loader::model('Auth');
+		$this->file_model = \CLx\Core\Loader::model('File');
 	}
 	
 	/**
-	 * Upload File or Make Directory
-	 * Input:
-	 * 		API: /files/{upload path.../upload file or directory name}
-	 * 		params(apikey, token),
-	 * 		POST file (form-data)
-	 * Output:
-	 * 		status: 200, 302, 404
-	 * 
-	 * 2011/12/21 CCLien
+	 * Get File or List
 	 */
-	public function create() {
-		$segments = request::segments();
-		$params = request::params();
-		$files = request::files();
+	public function read($segments) {
+		$params = \CLx\Core\Request::params();
 		
 		$token = isset($params['token']) ? $params['token'] : NULL;
-		
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
+		$version = isset($params['version']) ? $params['version'] : 0;
 
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
-
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			if(!file_exists($currentPath) && $path != '') {
-				if($files != NULL) {
-					// File Upload Handler
-					if(0 != $files['error'])
-						statusCode::setStatus(3005);
-					
-					if($files['size'] + $this->fileModel->getAllFileSize('/') > $this->fileConfig['capacity'])
-						statusCode::setStatus(4000);
-					
-					if(!statusCode::isError()) {
-						$dirpath = $segments;
-						array_pop($dirpath);
-						$dirpath = FILE_LOCATE . $this->fileModel->parsePath($dirpath);
-						
-						if(!file_exists($dirpath))
-							mkdir($dirpath, 0755, TRUE);
-						
-						if(!move_uploaded_file($files['tmp_name'], $currentPath))
-							statusCode::setStatus(3006);
-					}
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'create',
-								'type' => 'file',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							)
-						));
-					}
-				}
-				else {
-					// Create New Dir
-					if(!mkdir($currentPath, 0755, TRUE))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'create',
-								'type' => 'dir',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							)
-						));
-					}
-				}
-			}
-			else
-				statusCode::setStatus(3007);
+			// Initialize SimFS
+			SimFS::init(FILE_LOCATE);
+			
+			$path = $this->file_model->parsePath($segments);
+			// $current_path = FILE_LOCATE . $path;
+			
+			print_r(SimFS::index());
+			
+			// SimFS::read($path, NULL, $version);
+			
+			// if(file_exists($current_path) && is_file($current_path)) {
+				// $filerange = isset($params['filerange']) ? $params['filerange'] : NULL;
+// 
+				// $filesize = filesize($current_path);
+				// $filename = $segments[count($segments) - 1];
+// 				
+				// if($filerange == NULL) {
+					// header('Accept-Ranges: bytes');
+					// header('Content-Length: '. $filesize); 
+					// header('HTTP/1.1 200 OK'); 
+					// header('Content-Type: ' . $this->file_model->getMimetype($current_path));
+					// header('Content-Disposition: attachment; filename=' . $filename);
+// 					
+					// ob_end_flush();
+					// readfile($current_path);
+				// }
+				// else {
+					// $fp = fopen($current_path, 'rb');
+// 					
+					// header('Accept-Ranges: bytes');
+					// header('Content-Length: '. ($filesize - $range)); 
+					// header('HTTP/1.1 206 Partial Content'); 
+					// header('Content-Type: ' . $this->file_model->getMimetype($current_path));
+					// header('Content-Disposition: attachment; filename=' . $filename. '.tmp');
+					// header('Content-Range: bytes=' . $filerange . '-' . ($filesize - 1) . '/' . ($filesize)); 
+// 					
+					// ob_end_flush();
+					// fseek($fp, $filerange);
+					// fpassthru($fp);
+				// }
+			// }
+			// else {
+				// StatusCode::setStatus(3004);
+				// \CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+			// }
 		}
-
-		$this->view->json(array('status' => statusCode::getStatus()));
+		else
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
-	 * Get User's Directory List or Download a file.
-	 * Input:
-	 * 		API: /files/{download path}, 
-	 * 		params(apikey, token)
-	 * Output:
-	 * 		status: 200, 404
-	 * 		{dirlist: {path, date, size, type}}
-	 * 		{download file stream}
-	 * 
-	 * 2011/12/21 CCLien
+	 * Create File
 	 */
-	public function read() {
-		$segments = request::segments();
-		$params = request::params();
+	public function create($segments) {
+		$params = \CLx\Core\Request::params();
+		$files = \CLx\Core\Request::files();
 		
 		$token = isset($params['token']) ? $params['token'] : NULL;
-
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
+		
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
+			// Initialize SimFS
+			SimFS::init(FILE_LOCATE);
 			
-			if(file_exists($currentPath) && is_file($currentPath)) {
-				$filerange = isset($params['filerange']) ? $params['filerange'] : NULL;
-
-				$filesize = filesize($currentPath);
-				$filename = $segments[count($segments) - 1];
+			$path = $this->file_model->parsePath($segments);
+			
+			if(NULL !== $files) {
+				// File Upload Handler
+				if(0 != $files['error'])
+					StatusCode::setStatus(3005);
 				
-				if($filerange == NULL) {
-					header('Accept-Ranges: bytes');
-					header('Content-Length: '. $filesize); 
-					header('HTTP/1.1 200 OK'); 
-					header('Content-Type: ' . $this->fileModel->getMimetype($currentPath));
-					header('Content-Disposition: attachment; filename=' . $filename);
+				// Check capacity used
+				if($files['size'] + SimFS::getUsed() > $this->file_config['capacity'])
+					StatusCode::setStatus(4000);
+				
+				if(!StatusCode::isError()) {
+					// SimFS Create File
+					if(!SimFS::create($path, $files['tmp_name']))
+						StatusCode::setStatus(3006);
 					
-					ob_end_flush();
-					readfile($currentPath);
+					unlink($files['tmp_name']);
 				}
-				else {
-					$fp = fopen($currentPath, 'rb');
-					
-					header('Accept-Ranges: bytes');
-					header('Content-Length: '. ($filesize - $range)); 
-					header('HTTP/1.1 206 Partial Content'); 
-					header('Content-Type: ' . $this->fileModel->getMimetype($currentPath));
-					header('Content-Disposition: attachment; filename=' . $filename. '.tmp');
-					header('Content-Range: bytes=' . $filerange . '-' . ($filesize - 1) . '/' . ($filesize)); 
-					
-					ob_end_flush();
-					fseek($fp, $filerange);
-					fpassthru($fp);
+				
+				if(!StatusCode::isError()) {
+					\CLx\Core\Event::trigger('file_change', array(
+						'user' => $username,
+						'token' => $token,
+						'send' => array(
+							'action' => 'create',
+							'type' => 'file',
+							'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+						)
+					));
 				}
 			}
 			else {
-				statusCode::setStatus(3004);
-				$this->view->json(array('status' => statusCode::getStatus()));
+				// Create New Dir
+				if(!SimFS::create($path))
+					StatusCode::setStatus(3006);
+				
+				if(!StatusCode::isError()) {
+					\CLx\Core\Event::trigger('file_change', array(
+						'user' => $username,
+						'token' => $token,
+						'send' => array(
+							'action' => 'create',
+							'type' => 'dir',
+							'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+						)
+					));
+				}
 			}
+			
+			// Old File Handler
+			// if(!file_exists($current_path) && $path != '') {
+				// if($files != NULL) {
+					// // File Upload Handler
+					// if(0 != $files['error'])
+						// StatusCode::setStatus(3005);
+// 					
+					// // Check capacity used
+					// if($files['size'] + SimFS::getUsed() > $this->file_config['capacity'])
+						// StatusCode::setStatus(4000);
+// 					
+					// if(!StatusCode::isError()) {
+						// $dirpath = $segments;
+						// array_pop($dirpath);
+						// $dirpath = FILE_LOCATE . $this->file_model->parsePath($dirpath);
+// 						
+						// if(!file_exists($dirpath))
+							// mkdir($dirpath, 0755, TRUE);
+// 						
+						// if(!move_uploaded_file($files['tmp_name'], $current_path))
+							// StatusCode::setStatus(3006);
+					// }
+// 					
+					// if(!StatusCode::isError()) {
+						// \CLx\Core\Event::trigger('file_change', array(
+							// 'user' => $username,
+							// 'token' => $token,
+							// 'send' => array(
+								// 'action' => 'create',
+								// 'type' => 'file',
+								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+							// )
+						// ));
+					// }
+				// }
+				// else {
+					// // Create New Dir
+					// if(!mkdir($current_path, 0755, TRUE))
+						// StatusCode::setStatus(3006);
+// 					
+					// if(!StatusCode::isError()) {
+						// \CLx\Core\Event::trigger('file_change', array(
+							// 'user' => $username,
+							// 'token' => $token,
+							// 'send' => array(
+								// 'action' => 'create',
+								// 'type' => 'dir',
+								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+							// )
+						// ));
+					// }
+				// }
+			// }
+			// else
+				// StatusCode::setStatus(3007);
 		}
-		else
-			$this->view->json(array('status' => statusCode::getStatus()));
+
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
-	 * Update User's Directory or File.
-	 * Input:
-	 * 		API: /files/{Update path}, 
-	 * 		params(apikey, token, rename),
-	 * 		PUT file (form-data)
-	 * Output:
-	 * 		status: 200, 404
-	 * 
-	 * 2011/12/21 CCLien
+	 * Update File
 	 */
-	public function update() {
-		$segments = request::segments();
-		$params = request::params();
-		$files = request::files();
-		
-		$token = isset($params['token']) ? $params['token'] : NULL;
-
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
-			
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
-			
-			$newpath = isset($params['newpath']) ? $params['newpath'] : NULL;
-			$newpath = explode('/', trim($newpath, '/'));
-			$newpath = $this->fileModel->parsePath($newpath);
-			
-			if(file_exists($currentPath) && $path != '') {
-				if($files != NULL) {
-					if(0 != $files['error'] || md5_file($files['tmp_name']) == md5_file($currentPath))
-						statusCode::setStatus(3005);
-					
-					if(($files['size'] - filesize($currentPath)) + $this->fileModel->getAllFileSize('/') > $this->fileConfig['capacity'])
-						statusCode::setStatus(4000);
-					
-					if(!statusCode::isError()) {
-						$dirpath = $segments;
-						array_pop($dirpath);
-						$dirpath = FILE_LOCATE . $this->fileModel->parsePath($dirpath);
-						
-						if(!file_exists($dirpath))
-							mkdir($dirpath, 0755, TRUE);
-						
-						if(!unlink($currentPath) || !copy($files['tmp_name'], $currentPath))
-							statusCode::setStatus(3006);
-					}
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'update',
-								'type' => 'file',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path),
-								'hash' => md5_file($currentPath)
-							)
-						));
-					}
-				}
-				else if($newpath !== NULL && !file_exists(FILE_LOCATE . $newpath) ) {
-					if(!rename($currentPath, FILE_LOCATE . $newpath))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'rename',
-								'type' => is_dir(FILE_LOCATE . $newpath) ? 'dir' : 'file',
-								'oldpath' => str_replace(DIRECTORY_SEPARATOR, '/', $path),
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $newpath)
-							)
-						));
-					}
-				}
-			}
-			else
-				statusCode::setStatus(3007);
-		}
-
-		$this->view->json(array('status' => statusCode::getStatus()));
-	}
+	// public function update($segments) {
+		// $params = \CLx\Core\Request::params();
+		// $files = \CLx\Core\Request::files();
+// 		
+		// $token = isset($params['token']) ? $params['token'] : NULL;
+// 
+		// if($username = $this->auth_model->updateToken($token)) {
+			// define('FILE_LOCATE', $this->file_config['locate'] . $username);
+//
+// 			// Initialize SimFS
+			// SimFS::init(FILE_LOCATE);
+// 			
+			// $path = $this->file_model->parsePath($segments);
+			// $current_path = FILE_LOCATE . $path;
+// 			
+			// $newpath = isset($params['newpath']) ? $params['newpath'] : NULL;
+			// $newpath = explode('/', trim($newpath, '/'));
+			// $newpath = $this->file_model->parsePath($newpath);
+// 			
+			// if(file_exists($current_path) && $path != '') {
+				// if($files != NULL) {
+					// if(0 != $files['error'] || md5_file($files['tmp_name']) == md5_file($current_path))
+						// StatusCode::setStatus(3005);
+// 					
+					// if(($files['size'] - filesize($current_path)) + $this->file_model->getAllFileSize('/') > $this->file_config['capacity'])
+						// StatusCode::setStatus(4000);
+// 					
+					// if(!StatusCode::isError()) {
+						// $dirpath = $segments;
+						// array_pop($dirpath);
+						// $dirpath = FILE_LOCATE . $this->file_model->parsePath($dirpath);
+// 						
+						// if(!file_exists($dirpath))
+							// mkdir($dirpath, 0755, TRUE);
+// 						
+						// if(!unlink($current_path) || !copy($files['tmp_name'], $current_path))
+							// StatusCode::setStatus(3006);
+					// }
+// 					
+					// if(!StatusCode::isError()) {
+						// \CLx\Core\Event::trigger('file_change', array(
+							// 'user' => $username,
+							// 'token' => $token,
+							// 'send' => array(
+								// 'action' => 'update',
+								// 'type' => 'file',
+								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path),
+								// 'hash' => md5_file($current_path)
+							// )
+						// ));
+					// }
+				// }
+				// else if($newpath !== NULL && !file_exists(FILE_LOCATE . $newpath) ) {
+					// if(!rename($current_path, FILE_LOCATE . $newpath))
+						// StatusCode::setStatus(3006);
+// 					
+					// if(!StatusCode::isError()) {
+						// \CLx\Core\Event::trigger('file_change', array(
+							// 'user' => $username,
+							// 'token' => $token,
+							// 'send' => array(
+								// 'action' => 'rename',
+								// 'type' => is_dir(FILE_LOCATE . $newpath) ? 'dir' : 'file',
+								// 'oldpath' => str_replace(DIRECTORY_SEPARATOR, '/', $path),
+								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $newpath)
+							// )
+						// ));
+					// }
+				// }
+			// }
+			// else
+				// StatusCode::setStatus(3007);
+		// }
+// 
+		// \CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+	// }
 	
 	/**
-	 * Delete the Directory or File.
-	 * Input:
-	 * 		API: /files/{delete path}, 
-	 * 		params(apikey, token)
-	 * Output:
-	 * 		status: 200, 404
-	 * 
-	 * 2011/12/21 CCLien
+	 * Delete File or Dir
 	 */
-	public function delete() {
-		$segments = request::segments();
-		$params = request::params();
-		
-		$token = isset($params['token']) ? $params['token'] : NULL;
-
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
-			
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
-			
-			if(file_exists($currentPath) && $path != '') {
-				if(is_dir($currentPath)) {
-					if(!$this->fileModel->recursiveRmdir($currentPath))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'delete',
-								'type' => 'dir',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							)
-						));
-					}
-				}
-				else {
-					if(!unlink($currentPath))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'delete',
-								'type' => 'file',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							)
-						));
-					}
-				}
-			}
-			else
-				statusCode::setStatus(3004);
-		}
-
-		$this->view->json(array('status' => statusCode::getStatus()));
-	}
+	// public function delete($segments) {
+		// $params = \CLx\Core\Request::params();
+// 		
+		// $token = isset($params['token']) ? $params['token'] : NULL;
+// 
+		// if($username = $this->auth_model->updateToken($token)) {
+			// define('FILE_LOCATE', $this->file_config['locate'] . $username);
+//
+// 			// Initialize SimFS
+			// SimFS::init(FILE_LOCATE);
+// 			
+			// $path = $this->file_model->parsePath($segments);
+			// $current_path = FILE_LOCATE . $path;
+// 			
+			// if(file_exists($current_path) && $path != '') {
+				// if(is_dir($current_path)) {
+					// if(!$this->file_model->recursiveRmdir($current_path))
+						// StatusCode::setStatus(3006);
+// 					
+					// if(!StatusCode::isError()) {
+						// \CLx\Core\Event::trigger('file_change', array(
+							// 'user' => $username,
+							// 'token' => $token,
+							// 'send' => array(
+								// 'action' => 'delete',
+								// 'type' => 'dir',
+								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+							// )
+						// ));
+					// }
+				// }
+				// else {
+					// if(!unlink($current_path))
+						// StatusCode::setStatus(3006);
+// 					
+					// if(!StatusCode::isError()) {
+						// \CLx\Core\Event::trigger('file_change', array(
+							// 'user' => $username,
+							// 'token' => $token,
+							// 'send' => array(
+								// 'action' => 'delete',
+								// 'type' => 'file',
+								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+							// )
+						// ));
+					// }
+				// }
+			// }
+			// else
+				// StatusCode::setStatus(3004);
+		// }
+// 
+		// \CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+	// }
 }

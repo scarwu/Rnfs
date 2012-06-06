@@ -12,37 +12,37 @@
 class SyncController extends \CLx\Core\Controller {
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->syncConfig = $this->load->config('sync');
-		// Load Library
-		$this->load->sysLib('db');
-		// Load Extend Library
-		$this->load->extLib('statusCode');
+		$this->sync_config = \CLx\Core\Loader::config('Config', 'sync');
+		
 		// Load Model
-		$this->load->model('authModel');
+		$this->auth_model = \CLx\Core\Loader::model('Auth');
+		
+		// Load Extend Library
+		\CLx\Core\Loader::library('StatusCode');
 	}
 
-	public function create() {
-		$segments = request::segments();
-		$params = request::params();
+	public function create($segments) {
+		$params = \CLx\Core\Request::params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
-			statusCode::setStatus(2001);
+			StatusCode::setStatus(2001);
 
-		if($username == $this->authModel->updateToken($token)) {
+		if($username == $this->auth_model->updateToken($token)) {
 			//FIXME
-			db::disconnect();
+			\CLx\Library\Database::disconnect();
 			
-			if(!file_exists($this->syncConfig['locate'] . $username))
-				@mkdir($this->syncConfig['locate'] . $username, 0755, TRUE);
+			if(!file_exists($this->sync_config['locate'] . $username))
+				@mkdir($this->sync_config['locate'] . $username, 0755, TRUE);
 			
-			$sockpath = $this->syncConfig['locate'] . $username . DIRECTORY_SEPARATOR . $token;
+			$sockpath = $this->sync_config['locate'] . $username . DIRECTORY_SEPARATOR . $token;
 			
 			$startTime = time();
-			set_time_limit($this->syncConfig['timeout']+5);
+			set_time_limit($this->sync_config['timeout']+5);
 			
 			if(file_exists($sockpath))
 				unlink($sockpath);
@@ -64,13 +64,13 @@ class SyncController extends \CLx\Core\Controller {
 					echo $result;
 					break;
 				}
-				elseif(time()-$startTime >= $this->syncConfig['timeout']) {
-					response::sendHeader(408);
+				elseif(time()-$startTime >= $this->sync_config['timeout']) {
+					\CLx\Core\Response::setCode(408);
 					break;
 				}
 			}
 		}
 		else
-			$this->view->json(array('status' => statusCode::getStatus()));
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

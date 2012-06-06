@@ -22,9 +22,9 @@ class SimFS {
 	private static $_record = array();
 	
 	/**
-	 * @var array
+	 * @var int
 	 */
-	private static $_config = array();
+	private static $_revert = 0;
 	
 	private function __construct() {}
 	
@@ -33,9 +33,10 @@ class SimFS {
 	 * 
 	 * @param string
 	 */
-	public static function init($root, $config = NULL) {
+	public static function init($root, $revert = NULL) {
 		self::$_root = $root;
-		self::$_config = $config;
+		if(NULL !== $revert)
+			self::$_revert = $revert;
 		
 		// Load files record list
 		if(file_exists(self::$_root . '/record.json')) {
@@ -56,6 +57,7 @@ class SimFS {
 	 * Record Write-back
 	 */
 	private static function save() {
+		ksort(self::$_record);
 		$handle = fopen(self::$_root . '/record.json', 'w+');
 		fwrite($handle, json_encode(self::$_record));
 		fclose($handle);
@@ -65,7 +67,7 @@ class SimFS {
 	 * Index Files
 	 */
 	public static function index() {
-		return json_encode(self::$_record);
+		return self::$_record;
 	}
 	
 	/**
@@ -120,34 +122,43 @@ class SimFS {
 	}
 	
 	/**
-	 * Create File
+	 * Create File or Create Dir
 	 * 
 	 * @param string
 	 * @param string
 	 */
-	public static function create($real_src, $sim_dest) {
-		// Check Real Source and Sim Destination
-		if(!file_exists($real_src) || isset(self::$_record[$sim_dest]))
-			return FALSE;
-		
-		// Generate Unique-Hash for File
-		do {
-			$hash = hash('md5', hash_file('md5', $real_src) . rand());
+	public static function create($sim_path, $real_path = NULL) {
+		if(NULL !== $real_path) {
+			// Check Real Source and Sim Destination
+			if(!file_exists($real_path) || isset(self::$_record[$sim_path]))
+				return FALSE;
+			
+			// Generate Unique-Hash for File
+			do {
+				$hash = hash('md5', rand());
+			}
+			while(file_exists(self::$_root . '/' . $hash));
+			
+			// Copy Real File to SimFS
+			if(!copy($real_path, self::$_root . '/' . $hash))
+				return FALSE;
+			
+			// Add new record
+			self::$_record[$sim_path] = array(
+				'path' => $sim_path,
+				'hash' => array($hash)
+			);
 		}
-		while(file_exists(self::$_root . '/' . $hash));
-		
-		// Copy Real File to SimFS
-		if(!copy($real_src, self::$_root . '/' . $hash))
-			return FALSE;
-		
-		// Delete real file
-		// unlink($real_src);
-		
-		// Add new record
-		self::$_record[$sim_dest] = array(
-			'path' => $sim_dest,
-			'hash' => array($hash)
-		);
+		else {
+			// Check Sim Path
+			if(isset(self::$_record[$sim_path]))
+				return FALSE;
+	
+			// Add new record
+			self::$_record[$sim_path] = array(
+				'path' => $sim_path
+			);
+		}
 		
 		// Record Write-back
 		self::save();
@@ -160,26 +171,23 @@ class SimFS {
 	 * @param string
 	 * @param string
 	 */
-	public static function update($real_src, $sim_dest) {
+	public static function update($sim_path, $real_path) {
 		// Check Real Source and Sim Destination
-		if(!file_exists($real_src) || !isset(self::$_record[$sim_dest]))
+		if(!file_exists($real_path) || !isset(self::$_record[$sim_path]))
 			return FALSE;
 
 		// Generate Unique-Hash for File
 		do {
-			$hash = hash('md5', hash_file('md5', $real_src) . rand());
+			$hash = hash('md5', rand());
 		}
 		while(file_exists(self::$_root . '/' . $hash));
 		
 		// Copy Real File to SimFS
-		if(!copy($real_src, self::$_root . '/' . $hash))
+		if(!copy($real_path, self::$_root . '/' . $hash))
 			return FALSE;
 		
-		// Delete real file
-		// unlink($real_src);
-		
 		// Add new record
-		array_unshift(self::$_record[$sim_dest]['hash'], $hash);
+		array_unshift(self::$_record[$sim_path]['hash'], $hash);
 		
 		// Record Write-back
 		self::save();
@@ -241,5 +249,22 @@ class SimFS {
 		// Record Write-back
 		self::save();
 		return TRUE;
+	}
+	
+	/**
+	 * Get Used Capacity
+	 * 
+	 * @param string
+	 */
+	public static function getUsed() {
+		$capacity = 0;
+
+		// Calculate used capacity
+		foreach(self::$_record as $data) {
+			if(isset($data['hash']))
+				$capacity += filesize(self::$_root . '/' . $data['hash'][0]);
+		}
+		
+		return $capacity;
 	}
 }

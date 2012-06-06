@@ -13,48 +13,24 @@ class UserController extends \CLx\Core\Controller {
 	
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->auth_config = \CLx\Core\Loader::Config('Config', 'auth');
-		$this->file_config = \CLx\Core\Loader::Config('Config', 'file');
-		// Load Library
-		// $this->load->sysLib('db');
-		// $this->load->sysLib('event');
-		// Load Extend Library
-		\CLx\Core\Loader::Library('StatusCode');
+		$this->auth_config = \CLx\Core\Loader::config('Config', 'auth');
+		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+		
 		// Load Model
-		$this->auth_model = \CLx\Core\Loader::Model('Auth');
-		$this->user_model = \CLx\Core\Loader::Model('User');
+		$this->auth_model = \CLx\Core\Loader::model('Auth');
+		$this->user_model = \CLx\Core\Loader::model('User');
+		
+		// Load Extend Library
+		\CLx\Core\Loader::library('StatusCode');
 	}
 
 	/**
-	 * Create User Account
-	 * API: /users/{username}
-	 * Input: 
-	 * Output:
-	 */
-	public function create($segments) {
-		$params = \CLx\Core\Request::Params();
-		
-		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
-		$password = isset($params['password']) ? hash('md5', $params['password']) : NULL;
-		$email = isset($params['email']) ? $params['email'] : NULL;
-
-		if($this->user_model->createUser($username, $password, $email)) {
-			// Trigger event
-			\CLx\Core\Event::trigger('userCreate');
-		}
-		
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
-	}
-	
-	/**
-	 * Read User Information
-	 * API: /users/{username}
-	 * Input: 
-	 * Output:
+	 * 
 	 */
 	public function read($segments) {
-		$params = \CLx\Core\Request::Params();
+		$params = \CLx\Core\Request::params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
@@ -66,31 +42,51 @@ class UserController extends \CLx\Core\Controller {
 		
 		if(!StatusCode::isError()) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
 			
+			// Load SimFS and Initialize
+			\CLx\Core\Loader::Library('SimFS');
+			SimFS::init(FILE_LOCATE, $this->file_config['revert']);
+			
+			// Load User Information
 			$result = $this->user_model->getUserUseUsername($username);
+			
+			// Response Result
 			\CLx\Core\Response::toJSON(array(
 				'status' => StatusCode::getStatus(),
+				'username' => $result[0]['username'],
 				'email' => $result[0]['email'],
-				'uploadLimit' => $this->file_config['size'],
-				'capacity' => $this->file_config['capacity'] //,
-				// 'used' => $this->fileModel->getAllFileSize('/')
+				'upload_limit' => $this->file_config['upload_limit'],
+				'capacity' => $this->file_config['capacity'],
+				'used' => SimFS::getUsed()
 			));
 		}
 		else
 			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
+
+	/**
+	 * 
+	 */
+	public function create($segments) {
+		$params = \CLx\Core\Request::params();
+		
+		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
+		$password = isset($params['password']) ? hash('md5', $params['password']) : NULL;
+		$email = isset($params['email']) ? $params['email'] : NULL;
+
+		if($this->user_model->createUser($username, $password, $email)) {
+			// Trigger event
+			\CLx\Core\Event::trigger('user_create');
+		}
+		
+		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+	}
 	
 	/**
-	 * Update User Informatiom
-	 * API: /users/{username}
-	 * Input: 
-	 * Output:
+	 * 
 	 */
 	public function update($segments) {
-		$params = \CLx\Core\Request::Params();
+		$params = \CLx\Core\Request::params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
@@ -114,13 +110,10 @@ class UserController extends \CLx\Core\Controller {
 	}
 	
 	/**
-	 * Delete User Account
-	 * API: /users/{username}
-	 * Input: 
-	 * Output:
+	 * 
 	 */
 	public function delete($segments) {
-		$params = \CLx\Core\Request::Params();
+		$params = \CLx\Core\Request::params();
 		
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		$token = isset($params['token']) ? $params['token'] : NULL;
@@ -135,7 +128,7 @@ class UserController extends \CLx\Core\Controller {
 			
 			if($this->user_model->deleteUser($username, $password)) {
 				// Trigger event
-				event::trigger('userDelete');
+				\CLx\Core\Event::trigger('user_delete');
 			}
 		}
 		

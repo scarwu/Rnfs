@@ -12,8 +12,9 @@
 class UserModel extends \CLx\Core\Model {
 	public function __construct() {
 		parent::__construct();
-		// Load Extend Library
-		\CLx\Core\Loader::Library('StatusCode');
+		
+		// Load Library
+		\CLx\Core\Loader::library('StatusCode');
 	}
 	
 	// Create User
@@ -32,10 +33,10 @@ class UserModel extends \CLx\Core\Model {
 		}
 		
 		// Regular express
-		$regeUser = '/^\w{4,16}$/';
-		$regeEmail = '/^([\w-\.]+)@((?:[\w]+\.)+)([a-zA-Z]+)$/';
+		$regex_username = '/^\w{4,16}$/';
+		$regex_email = '/^([\w-\.]+)@((?:[\w]+\.)+)([a-zA-Z]+)$/';
 		
-		if(!preg_match($regeUser, $username) || !preg_match($regeEmail, $email)) {
+		if(!preg_match($regex_username, $username) || !preg_match($regex_email, $email)) {
 			StatusCode::setStatus(3002);
 			return FALSE;
 		}
@@ -54,23 +55,23 @@ class UserModel extends \CLx\Core\Model {
 	}
 
 	// Update User Password
-	public function updateUserPassword($username, $oldpassword, $newpassword) {
+	public function updateUserPassword($username, $old_password, $new_password) {
 		if(NULL == $username) {
 			StatusCode::setStatus(2001);
 			return FALSE;
 		}
-		elseif(NULL == $oldpassword) {
+		elseif(NULL == $old_password) {
 			StatusCode::setStatus(2002);
 			return FALSE;
 		}
-		elseif(NULL == $newpassword) {
+		elseif(NULL == $new_password) {
 			StatusCode::setStatus(2002);
 			return FALSE;
 		}
 
 		// Check update success
 		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:opw';
-		$params = array(':un' => $username, ':opw' => $oldpassword);
+		$params = array(':un' => $username, ':opw' => $old_password);
 		if(0 == count($this->_db->query($sql, $params)->asArray())) {
 			StatusCode::setStatus(3002);
 			return FALSE;
@@ -79,15 +80,15 @@ class UserModel extends \CLx\Core\Model {
 		// Update password
 		$sql = 'UPDATE `accounts` SET `password`=:npw WHERE `username`=:un AND `password`=:opw';
 		$params = array(
-			':npw' => $newpassword,
+			':npw' => $new_password,
 			':un' => $username,
-			':opw' => $oldpassword
+			':opw' => $old_password
 		);
 		$this->_db->query($sql, $params);
 		
 		// Check update success
 		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:npw';
-		$params = array(':un' => $username, ':npw' => $newpassword);
+		$params = array(':un' => $username, ':npw' => $new_password);
 		if(0 == count($this->_db->query($sql, $params)->asArray())) {
 			StatusCode::setStatus(3002);
 			return FALSE;

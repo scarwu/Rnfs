@@ -10,15 +10,17 @@
  */
 
 class FileModel extends \CLx\Core\Model {
+	
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->fileConfig = $this->load->config('file');
-		// Load Extend Library
-		$this->load->extLib('statusCode');
+		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+		
+		// Load Library
+		\CLx\Core\Loader::library('StatusCode');
 		
 		$this->list = array();
-		$this->size = 0;
 	}
 
 	/**--------------------------------------------------
@@ -65,7 +67,6 @@ class FileModel extends \CLx\Core\Model {
 		}
 	}
 
-
 	/**--------------------------------------------------
 	 * Get File Hash List
 	 * --------------------------------------------------
@@ -74,21 +75,21 @@ class FileModel extends \CLx\Core\Model {
 	 */
 	public function getFileHashList($path = NULL) {
 		if(NULL !== $path) {
-			if($handle = @opendir($currentPath = FILE_LOCATE . $path)) {
+			if($handle = @opendir($current_path = FILE_LOCATE . $path)) {
 				$filelist = array();
 				while($file = readdir($handle))
 					array_push($filelist, $file);
 				sort($filelist);
 				foreach((array)$filelist as $dir)
 					if($dir != '.' && $dir != '..') {
-						if(@filetype($currentPath. DIRECTORY_SEPARATOR . $dir) != 'dir')
+						if(@filetype($current_path. DIRECTORY_SEPARATOR . $dir) != 'dir')
 							array_push($this->list, array(
-								'hash' => @md5_file($currentPath . DIRECTORY_SEPARATOR . $dir),
-								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->fileConfig['encode'], $path . '/' . $dir)
+								'hash' => @md5_file($current_path . DIRECTORY_SEPARATOR . $dir),
+								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path . '/' . $dir)
 							));
 						else
 							array_push($this->list, array(
-								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->fileConfig['encode'], $path . '/' . $dir),
+								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path . '/' . $dir),
 							));
 						$this->getFileHashList($path . '/' . $dir);
 					}
@@ -107,14 +108,14 @@ class FileModel extends \CLx\Core\Model {
 	 */
 	public function getFileList($path = NULL) {
 		if(NULL !== $path) {
-			if($handle = @opendir($currentPath = FILE_LOCATE . $path)) {
+			if($handle = @opendir($current_path = FILE_LOCATE . $path)) {
 				while($dir = readdir($handle))
 					if($dir != '.' && $dir != '..') {
 						array_push($this->list, array(
-							'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->fileConfig['encode'], $path. '/' . $dir),
-							'date' => @filectime($currentPath . DIRECTORY_SEPARATOR . $dir),
-							'size' => @filesize($currentPath . DIRECTORY_SEPARATOR . $dir),
-							'type' => @filetype($currentPath . DIRECTORY_SEPARATOR . $dir)
+							'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path. '/' . $dir),
+							'date' => @filectime($current_path . DIRECTORY_SEPARATOR . $dir),
+							'size' => @filesize($current_path . DIRECTORY_SEPARATOR . $dir),
+							'type' => @filetype($current_path . DIRECTORY_SEPARATOR . $dir)
 						));
 						$this->getFileList($path . '/' . $dir);
 					}
@@ -122,28 +123,6 @@ class FileModel extends \CLx\Core\Model {
 			}
 			sort($this->list);
 			return $this->list;
-		}
-		return FALSE;
-	}
-	
-	/**--------------------------------------------------
-	 * Get All File Size
-	 * --------------------------------------------------
-	 * @param	string $path
-	 * @return	array $list
-	 */
-	public function getAllFileSize($path = NULL) {
-		if(NULL !== $path) {
-			if($handle = @opendir($currentPath = FILE_LOCATE . $path)) {
-				while($dir = readdir($handle))
-					if($dir != '.' && $dir != '..') {
-						if(is_file($currentPath . DIRECTORY_SEPARATOR . $dir))
-							$this->size += @filesize($currentPath . DIRECTORY_SEPARATOR . $dir);
-						$this->getAllFileSize($path . '/' . $dir);
-					}
-				closedir($handle);
-			}
-			return $this->size;
 		}
 		return FALSE;
 	}

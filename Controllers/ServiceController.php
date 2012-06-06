@@ -10,18 +10,16 @@
  */
 
 class ServiceController extends \CLx\Core\Controller {
-	
-	/**
-	 * 
-	 */
+
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Library
 		\CLx\Core\Loader::library('StatusCode');
 	}
 	
 	/**
-	 * 
+	 * Load service list
 	 */
 	public function read() {
 		// Load Usage

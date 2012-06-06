@@ -13,10 +13,12 @@ class AuthController extends \CLx\Core\Controller {
 	
 	public function __construct() {
 		parent::__construct();
-		// Load Extend Library
-		\CLx\Core\Loader::library('StatusCode');
+		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
+		
+		// Load Library
+		\CLx\Core\Loader::library('StatusCode');
 	}
 
 	/**

@@ -14,8 +14,10 @@ class AuthModel extends \CLx\Core\Model {
 	
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->_auth_config = \CLx\Core\Loader::config('Config', 'auth');
+		$this->auth_config = \CLx\Core\Loader::config('Config', 'auth');
+		
 		// Load Library
 		\CLx\Core\Loader::library('StatusCode');
 	}
@@ -45,7 +47,7 @@ class AuthModel extends \CLx\Core\Model {
 		$time = time();
 		
 		// Delete timeout token
-		$this->deleteDBTokenByTime($username, $time-$this->_auth_config['timeout']);
+		$this->deleteDBTokenByTime($username, $time-$this->auth_config['timeout']);
 		
 		while(1) {
 			$token = hash('sha256', rand().$time);
@@ -66,7 +68,7 @@ class AuthModel extends \CLx\Core\Model {
 		}
 		
 		$time = time();
-		if(!($result = $this->loginByToken($token, $time-$this->_auth_config['timeout']))) {
+		if(!($result = $this->loginByToken($token, $time-$this->auth_config['timeout']))) {
 			StatusCode::setStatus(3000);
 			return FALSE;
 		}

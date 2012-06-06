@@ -93,6 +93,6 @@ class StatusCode {
 	 * --------------------------------------------------
 	 */
 	public static function isError() {
-		return 1000 != self::$_code;
+		return self::$_is_error;
 	}
 }
