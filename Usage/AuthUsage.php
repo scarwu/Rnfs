@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['auth'] = array(
+$usage['auth'] = array(
 	'POST' => array(
 		array(
 			'description' => 'Verify identity and obtain token.',

@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['fileinfo'] = array(
+$usage['fileinfo'] = array(
 	'GET' => array(
 		array(
 			'description' => 'Obtain file information.',

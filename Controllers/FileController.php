@@ -105,7 +105,10 @@ class FileController extends \CLx\Core\Controller {
 			
 			$path = $this->file_model->parsePath($segments);
 			
-			if(NULL !== $files) {
+			if(SimFS::isExists($path))
+				StatusCode::setStatus(3007);
+				
+			if(NULL !== $files && !StatusCode::isError()) {
 				// File Upload Handler
 				if(0 != $files['error'])
 					StatusCode::setStatus(3005);
@@ -118,9 +121,9 @@ class FileController extends \CLx\Core\Controller {
 					// SimFS Create File
 					if(!SimFS::create($path, $files['tmp_name']))
 						StatusCode::setStatus(3006);
-					
-					unlink($files['tmp_name']);
 				}
+				
+				unlink($files['tmp_name']);
 				
 				if(!StatusCode::isError()) {
 					\CLx\Core\Event::trigger('file_change', array(
@@ -129,12 +132,12 @@ class FileController extends \CLx\Core\Controller {
 						'send' => array(
 							'action' => 'create',
 							'type' => 'file',
-							'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+							'path' => $path
 						)
 					));
 				}
 			}
-			else {
+			elseif(!StatusCode::isError()) {
 				// Create New Dir
 				if(!SimFS::create($path))
 					StatusCode::setStatus(3006);
@@ -146,67 +149,11 @@ class FileController extends \CLx\Core\Controller {
 						'send' => array(
 							'action' => 'create',
 							'type' => 'dir',
-							'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+							'path' => $path
 						)
 					));
 				}
 			}
-			
-			// Old File Handler
-			// if(!file_exists($current_path) && $path != '') {
-				// if($files != NULL) {
-					// // File Upload Handler
-					// if(0 != $files['error'])
-						// StatusCode::setStatus(3005);
-// 					
-					// // Check capacity used
-					// if($files['size'] + SimFS::getUsed() > $this->file_config['capacity'])
-						// StatusCode::setStatus(4000);
-// 					
-					// if(!StatusCode::isError()) {
-						// $dirpath = $segments;
-						// array_pop($dirpath);
-						// $dirpath = FILE_LOCATE . $this->file_model->parsePath($dirpath);
-// 						
-						// if(!file_exists($dirpath))
-							// mkdir($dirpath, 0755, TRUE);
-// 						
-						// if(!move_uploaded_file($files['tmp_name'], $current_path))
-							// StatusCode::setStatus(3006);
-					// }
-// 					
-					// if(!StatusCode::isError()) {
-						// \CLx\Core\Event::trigger('file_change', array(
-							// 'user' => $username,
-							// 'token' => $token,
-							// 'send' => array(
-								// 'action' => 'create',
-								// 'type' => 'file',
-								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							// )
-						// ));
-					// }
-				// }
-				// else {
-					// // Create New Dir
-					// if(!mkdir($current_path, 0755, TRUE))
-						// StatusCode::setStatus(3006);
-// 					
-					// if(!StatusCode::isError()) {
-						// \CLx\Core\Event::trigger('file_change', array(
-							// 'user' => $username,
-							// 'token' => $token,
-							// 'send' => array(
-								// 'action' => 'create',
-								// 'type' => 'dir',
-								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							// )
-						// ));
-					// }
-				// }
-			// }
-			// else
-				// StatusCode::setStatus(3007);
 		}
 
 		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));

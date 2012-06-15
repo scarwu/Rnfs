@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['file'] = array(
+$usage['file'] = array(
 	'POST' => array(
 		array(
 			'description' => 'Upload file or make directory.',

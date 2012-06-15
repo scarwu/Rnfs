@@ -9,16 +9,13 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['services'] = array(
+$usage['service'] = array(
 	'GET' => array(
 		array(
-			'description' => 'Obtain services list and services usage.',
-			'API' => '/services',
-			'input' => array(
-				array('full', 'boolean')
-			),
+			'description' => 'Obtain service list and service usage.',
+			'API' => '/service',
+			'input' => array(),
 			'output' => array(
-				array('status', 'array'),
 				array('list', 'array'),
 				array('usage', 'array'),
 				array('statuscode', 'array')

@@ -31,13 +31,13 @@ class FileModel extends \CLx\Core\Model {
 	 */
 	public function parsePath($segments = NULL) {
 		$blacklist = array('[', ']', '&', "'", '"', '?', '/', '\\', '#', ';');
-		$path = DIRECTORY_SEPARATOR;
+		$path = '/';
 		foreach((array)$segments as $value)
 			if($value != '.' || $value != '..') {
 				$value = str_replace($blacklist, '', $value);
-				$path .= $path == DIRECTORY_SEPARATOR ? $value : DIRECTORY_SEPARATOR . $value;
+				$path .= $path == '/' ? $value : '/' . $value;
 			}
-		return $path == DIRECTORY_SEPARATOR ? '' : $path;
+		return $path == '/' ? '' : $path;
 	}
 
 	/**--------------------------------------------------

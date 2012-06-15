@@ -52,7 +52,6 @@ class UserController extends \CLx\Core\Controller {
 			
 			// Response Result
 			\CLx\Core\Response::toJSON(array(
-				'status' => StatusCode::getStatus(),
 				'username' => $result[0]['username'],
 				'email' => $result[0]['email'],
 				'upload_limit' => $this->file_config['upload_limit'],
@@ -79,7 +78,8 @@ class UserController extends \CLx\Core\Controller {
 			\CLx\Core\Event::trigger('user_create');
 		}
 		
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
@@ -105,8 +105,9 @@ class UserController extends \CLx\Core\Controller {
 				$this->auth_model->deleteDBTokenByTime($username, time()+$this->auth_config['timeout']);
 			}
 		}
-
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
@@ -131,7 +132,8 @@ class UserController extends \CLx\Core\Controller {
 				\CLx\Core\Event::trigger('user_delete');
 			}
 		}
-		
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

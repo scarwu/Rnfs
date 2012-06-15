@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['sync'] = array(
+$usage['sync'] = array(
 	'POST' => array(
 		array(
 			'description' => 'Create Server push.',

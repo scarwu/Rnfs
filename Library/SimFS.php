@@ -130,7 +130,7 @@ class SimFS {
 	public static function create($sim_path, $real_path = NULL) {
 		if(NULL !== $real_path) {
 			// Check Real Source and Sim Destination
-			if(!file_exists($real_path) || isset(self::$_record[$sim_path]))
+			if(!file_exists($real_path) || self::isExists($sim_path))
 				return FALSE;
 			
 			// Generate Unique-Hash for File
@@ -151,7 +151,7 @@ class SimFS {
 		}
 		else {
 			// Check Sim Path
-			if(isset(self::$_record[$sim_path]))
+			if(self::isExists($sim_path))
 				return FALSE;
 	
 			// Add new record
@@ -249,6 +249,15 @@ class SimFS {
 		// Record Write-back
 		self::save();
 		return TRUE;
+	}
+	
+	/**
+	 * Check file or dir is exists
+	 * 
+	 * @param string
+	 */
+	public static function isExists($path) {
+		return isset(self::$_record[$path]);
 	}
 	
 	/**

@@ -66,7 +66,6 @@ class StatusCode {
 			\CLx\Core\Response::setCode(200);
 		
 		return array(
-			'http' => self::$_error_code[self::$_code][0],
 			'code' => self::$_code,
 			'msg' => self::$_error_code[self::$_code][1]
 		);

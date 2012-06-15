@@ -9,13 +9,16 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
+// Regular Expression
+$regex_url = '^/(\w+)((?:/[\w|\.]+)+)?';
+ 
 /**
  * GET Method Route Rules
  * 
  * @var array
  */
 $Route['get'] = array(
-	array('^/(\w+)((?:/[\w|\.]+)+)?', function($result) {
+	array($regex_url, function($result) {
 		$result[1] = isset($result[1]) ? explode('/', trim($result[1], '/')) : NULL;
 		
 		if(!\CLx\Core\Loader::controller($result[0], 'read', $result[1]))
@@ -35,7 +38,7 @@ $Route['get'] = array(
  * @var array
  */
 $Route['post'] = array(
-	array('^/(\w+)((?:/[\w|\.]+)+)?', function($result) {
+	array($regex_url, function($result) {
 		$result[1] = isset($result[1]) ? explode('/', trim($result[1], '/')) : NULL;
 		
 		if(!\CLx\Core\Loader::controller($result[0], 'create', $result[1]))
@@ -52,7 +55,7 @@ $Route['post'] = array(
  * @var array
  */
 $Route['put'] = array(
-	array('^/(\w+)((?:/[\w|\.]+)+)?', function($result) {
+	array($regex_url, function($result) {
 		$result[1] = isset($result[1]) ? explode('/', trim($result[1], '/')) : NULL;
 		
 		if(!\CLx\Core\Loader::controller($result[0], 'update', $result[1]))
@@ -69,7 +72,7 @@ $Route['put'] = array(
  * @var array
  */
 $Route['delete'] = array(
-	array('^/(\w+)((?:/[\w|\.]+)+)?', function($result) {
+	array($regex_url, function($result) {
 		$result[1] = isset($result[1]) ? explode('/', trim($result[1], '/')) : NULL;
 		
 		if(!\CLx\Core\Loader::controller($result[0], 'delete', $result[1]))

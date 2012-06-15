@@ -1,10 +1,9 @@
 Reborn
 ======
-####(from the Cixty-Nanotube)
 
 ### Description
 
-The RESTful File Services
+The RESTful File Services (from the Cixty-Nanotube)
 
 ### Requirement
 

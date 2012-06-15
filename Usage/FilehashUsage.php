@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['filehash'] = array(
+$usage['filehash'] = array(
 	'GET' => array(
 		array(
 			'description' => 'Compare file hash.',

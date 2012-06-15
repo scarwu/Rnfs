@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['filehashlist'] = array(
+$usage['filehashlist'] = array(
 	'GET' => array(
 		array(
 			'description' => 'Obtain file hash list.',

@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
-$Usage['user'] = array(
+$usage['user'] = array(
 	'POST' => array(
 		array(
 			'description' => 'Register a new user account.',
