@@ -10,12 +10,12 @@
  */
 
 $Config['auth'] = array(
-	'timeout' => 3000,
+	'timeout' => 30000,
 	'connect' => 10
 );
 
 $Config['file'] = array(
-	'locate' => TEMP_DIR . 'reborn/',
+	'locate' => TEMP_DIR . 'reborn_server/',
 	'encode' => PHP_OS == 'Linux' ? 'UTF-8' : 'BIG5',
 	'upload_limit' => 256 * 1024 * 1024,
 	'capacity' => 512 * 1024 * 1024,

@@ -33,14 +33,14 @@ class ServiceController extends \CLx\Core\Controller {
 		// Create List
 		$list = array();
 		foreach((array)$usage as $key => $value)
-			array_push($list, $key);
+			$list[] = $key;
 		sort($list);
 		
 		// Send Json
 		\CLx\Core\Response::toJSON(array(
 			'list' => $list,
 			'usage' => $usage,
-			'statuscode' => StatusCode::getStatusList()
+			'code' => StatusCode::getStatusList()
 		));
 	}
 }

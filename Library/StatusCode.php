@@ -19,19 +19,17 @@ class StatusCode {
 		1000 => array(200, 'OK'),
 		
 		// Something was missing
-		2000 => array(400, 'Token is missing'),
+		2000 => array(401, 'Token is missing'),
 		2001 => array(400, 'Username is missing'),
 		2002 => array(400, 'Password is missing'),
 		2003 => array(400, 'E-mail is missing'),
-		2004 => array(400, 'Path is missing'),
-		2005 => array(400, 'Newpath is missing'),
 		
 		// Something was error
 		3000 => array(401, 'Token is invaild'),
-		3001 => array(404, 'User is\'t found'),
+		3001 => array(404, 'User isn\'t found'),
 		3002 => array(403, 'Username or Password Error'),
 		3003 => array(403, 'User is existence'),
-		3004 => array(404, 'Path is not found'),
+		3004 => array(404, 'File or dir is not found'),
 		3005 => array(400, 'Upload failed'),
 		3006 => array(403, 'File operations Error'),
 		3007 => array(403, 'File or dir is existence'),
@@ -65,10 +63,7 @@ class StatusCode {
 		if(1000 == self::$_code)
 			\CLx\Core\Response::setCode(200);
 		
-		return array(
-			'code' => self::$_code,
-			'msg' => self::$_error_code[self::$_code][1]
-		);
+		return array(self::$_code => self::$_error_code[self::$_code][1]);
 	}
 	
 	/**--------------------------------------------------
@@ -78,11 +73,10 @@ class StatusCode {
 	public static function getStatusList() {
 		$list = array();
 		foreach((array)self::$_error_code as $key => $value)
-			array_push($list, array(
-				'code' => $key,
-				'http' => $value[0],
-				'msg' => $value[1]
-			));
+			$list[$key] = array(
+				'status' => $value[0],
+				'message' => $value[1]
+			);
 		
 		return $list;
 	}

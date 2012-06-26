@@ -47,6 +47,8 @@ class SimFS {
 			self::$_record = json_decode($json, TRUE);
 			fclose($handle);
 		}
+		else
+			self::create('/');
 		
 		// Make root folder
 		if(!file_exists(self::$_root))
@@ -66,7 +68,7 @@ class SimFS {
 	/**
 	 * Index Files
 	 */
-	public static function index() {
+	public static function index($path='/') {
 		return self::$_record;
 	}
 	
@@ -111,9 +113,10 @@ class SimFS {
 		if(!isset(self::$_record[$sim_src]) || isset(self::$_record[$sim_dest]))
 			return FALSE;
 		
-		self::$_record[$sim_src]['path'] = $sim_dest;
+		// Change old path to new path
 		self::$_record[$sim_dest] = self::$_record[$sim_src];
 		
+		// Unset old path
 		unset(self::$_record[$sim_src]);
 		
 		// Record Write-back
@@ -145,7 +148,7 @@ class SimFS {
 			
 			// Add new record
 			self::$_record[$sim_path] = array(
-				'path' => $sim_path,
+				'type' => 'file',
 				'hash' => array($hash)
 			);
 		}
@@ -156,7 +159,7 @@ class SimFS {
 	
 			// Add new record
 			self::$_record[$sim_path] = array(
-				'path' => $sim_path
+				'type' => 'dir'
 			);
 		}
 		
@@ -212,6 +215,7 @@ class SimFS {
 		// Normal download
 		if(NULL === $seek) {
 			// ob_end_flush();
+			header('Content-Type: ' . mime_content_type(self::$_root . '/' . self::$_record[$path]['hash'][$version]));
 			readfile(self::$_root . '/' . self::$_record[$path]['hash'][$version]);
 			return TRUE;
 		}
@@ -219,6 +223,7 @@ class SimFS {
 		// Resume download
 		if(is_int($seek) && $seek <= filesize(self::$_root . '/' . self::$_record[$path]['hash'][$version])) {
 			// ob_end_flush();
+			header('Content-Type: ' . mime_content_type(self::$_root . '/' . self::$_record[$path]['hash'][$version]));
 			$handle = fopen(self::$_root . '/' . self::$_record[$path]['hash'][$version], 'rb');
 			fseek($handle, $seek);
 			fpassthru($handle);
@@ -249,6 +254,45 @@ class SimFS {
 		// Record Write-back
 		self::save();
 		return TRUE;
+	}
+	
+	/**
+	 * Check type
+	 * 
+	 * @param string
+	 */
+	public static function type($path) {
+		// Check Path is exists
+		if(!isset(self::$_record[$path]))
+			return FALSE;
+		
+		return self::$_record[$path]['type'];
+	}
+	
+	/**
+	 * Check path is dir or not
+	 * 
+	 * @param string
+	 */
+	public static function isDir($path) {
+		// Check Path is exists
+		if(!isset(self::$_record[$path]))
+			return FALSE;
+		
+		return 'dir' === self::$_record[$path]['type'];
+	}
+	
+	/**
+	 * Check path is file or not
+	 * 
+	 * @param string
+	 */
+	public static function isFile($path) {
+		// Check Path is exists
+		if(!isset(self::$_record[$path]))
+			return FALSE;
+		
+		return 'file' === self::$_record[$path]['type'];
 	}
 	
 	/**

@@ -42,8 +42,8 @@ $usage['user'] = array(
 			'API' => '/user/{username}',
 			'input' => array(
 				array('token', 'string', 64),
-				array('oldpassword', 'string', 24),
-				array('newpassword', 'string', 24)
+				array('old_password', 'string', 24),
+				array('new_password', 'string', 24)
 			),
 			'output' => array(
 				array('status', 'array')

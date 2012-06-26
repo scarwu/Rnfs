@@ -9,9 +9,14 @@
  * @link		http://github.com/scarwu/Reborn
  */
 
+/**
+ * Set Default Header
+ */
+header('Content-Type: none');
+
 // Regular Expression
 $regex_url = '^/(\w+)((?:/[\w|\.]+)+)?';
- 
+
 /**
  * GET Method Route Rules
  * 

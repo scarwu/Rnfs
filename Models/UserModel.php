@@ -125,8 +125,12 @@ class UserModel extends \CLx\Core\Model {
 		$sql = 'DELETE FROM `accounts` WHERE `username`=:un AND `password`=:pw';
 		$params = array(':un' => $username, ':pw' => $password);
 		$this->_db->query($sql, $params);
-		if(!$this->isUserExist($username))
+		if(!$this->isUserExist($username)) {
+			$sql = 'DELETE FROM `tokenlist` WHERE `username`=:un';
+			$params = array(':un' => $username);
+			$this->_db->query($sql, $params);
 			return TRUE;
+		}
 	}
 
 	public function getUserUseUsername($username) {

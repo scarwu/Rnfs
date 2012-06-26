@@ -30,10 +30,12 @@ class UserController extends \CLx\Core\Controller {
 	 * 
 	 */
 	public function read($segments) {
+		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
+		// Get headers & segments detail
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
-		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
 			StatusCode::setStatus(2001);
@@ -86,10 +88,12 @@ class UserController extends \CLx\Core\Controller {
 	 * 
 	 */
 	public function update($segments) {
+		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
+		// Get headers & segments detail
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
-		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
 			StatusCode::setStatus(2001);
@@ -97,16 +101,15 @@ class UserController extends \CLx\Core\Controller {
 			StatusCode::setStatus(3000);
 		
 		if(!StatusCode::isError()) {
-			$newpassword = isset($params['newpassword']) ? hash('md5', $params['newpassword']) : NULL;
-			$oldpassword = isset($params['oldpassword']) ? hash('md5', $params['oldpassword']) : NULL;
+			$old_password = isset($params['old_password']) ? hash('md5', $params['old_password']) : NULL;
+			$new_password = isset($params['new_password']) ? hash('md5', $params['new_password']) : NULL;
 			
-			if($this->user_model->updateUserPassword($username, $oldpassword, $newpassword)) {
+			if($this->user_model->updateUserPassword($username, $old_password, $new_password)) {
 				// Delete Token
 				$this->auth_model->deleteDBTokenByTime($username, time()+$this->auth_config['timeout']);
 			}
 		}
-		
-		if(StatusCode::isError())
+		else
 			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
@@ -114,10 +117,12 @@ class UserController extends \CLx\Core\Controller {
 	 * 
 	 */
 	public function delete($segments) {
+		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
+		// Get headers & segments detail
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
-		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
 			StatusCode::setStatus(2001);
@@ -132,8 +137,7 @@ class UserController extends \CLx\Core\Controller {
 				\CLx\Core\Event::trigger('user_delete');
 			}
 		}
-
-		if(StatusCode::isError())
+		else
 			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

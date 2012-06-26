@@ -30,9 +30,10 @@ class FileController extends \CLx\Core\Controller {
 	 * Get File or List
 	 */
 	public function read($segments) {
+		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
-		$token = isset($params['token']) ? $params['token'] : NULL;
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		$version = isset($params['version']) ? $params['version'] : 0;
 
 		if($username = $this->auth_model->updateToken($token)) {
@@ -42,49 +43,21 @@ class FileController extends \CLx\Core\Controller {
 			SimFS::init(FILE_LOCATE);
 			
 			$path = $this->file_model->parsePath($segments);
-			// $current_path = FILE_LOCATE . $path;
 			
-			print_r(SimFS::index());
+			// Check file is exists
+			if(!SimFS::isExists($path))
+				StatusCode::setStatus(3004);
 			
-			// SimFS::read($path, NULL, $version);
-			
-			// if(file_exists($current_path) && is_file($current_path)) {
-				// $filerange = isset($params['filerange']) ? $params['filerange'] : NULL;
-// 
-				// $filesize = filesize($current_path);
-				// $filename = $segments[count($segments) - 1];
-// 				
-				// if($filerange == NULL) {
-					// header('Accept-Ranges: bytes');
-					// header('Content-Length: '. $filesize); 
-					// header('HTTP/1.1 200 OK'); 
-					// header('Content-Type: ' . $this->file_model->getMimetype($current_path));
-					// header('Content-Disposition: attachment; filename=' . $filename);
-// 					
-					// ob_end_flush();
-					// readfile($current_path);
-				// }
-				// else {
-					// $fp = fopen($current_path, 'rb');
-// 					
-					// header('Accept-Ranges: bytes');
-					// header('Content-Length: '. ($filesize - $range)); 
-					// header('HTTP/1.1 206 Partial Content'); 
-					// header('Content-Type: ' . $this->file_model->getMimetype($current_path));
-					// header('Content-Disposition: attachment; filename=' . $filename. '.tmp');
-					// header('Content-Range: bytes=' . $filerange . '-' . ($filesize - 1) . '/' . ($filesize)); 
-// 					
-					// ob_end_flush();
-					// fseek($fp, $filerange);
-					// fpassthru($fp);
-				// }
-			// }
-			// else {
-				// StatusCode::setStatus(3004);
-				// \CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
-			// }
+			// Load file or list
+			if(!StatusCode::isError()) {
+				if(SimFS::isDir($path))
+					CLx\Core\Response::toJSON(SimFS::index($path));
+				else
+					SimFS::read($path, NULL, $version);
+			}
 		}
-		else
+		
+		if(StatusCode::isError())
 			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
@@ -92,10 +65,10 @@ class FileController extends \CLx\Core\Controller {
 	 * Create File
 	 */
 	public function create($segments) {
-		$params = \CLx\Core\Request::params();
+		$headers = \CLx\Core\Request::headers();
 		$files = \CLx\Core\Request::files();
 		
-		$token = isset($params['token']) ? $params['token'] : NULL;
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
@@ -105,12 +78,13 @@ class FileController extends \CLx\Core\Controller {
 			
 			$path = $this->file_model->parsePath($segments);
 			
+			// Check file is exists
 			if(SimFS::isExists($path))
 				StatusCode::setStatus(3007);
 				
 			if(NULL !== $files && !StatusCode::isError()) {
 				// File Upload Handler
-				if(0 != $files['error'])
+				if(0 !== $files['error'])
 					StatusCode::setStatus(3005);
 				
 				// Check capacity used
@@ -123,6 +97,7 @@ class FileController extends \CLx\Core\Controller {
 						StatusCode::setStatus(3006);
 				}
 				
+				// Unlink temp file
 				unlink($files['tmp_name']);
 				
 				if(!StatusCode::isError()) {
@@ -155,8 +130,9 @@ class FileController extends \CLx\Core\Controller {
 				}
 			}
 		}
-
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
@@ -242,58 +218,57 @@ class FileController extends \CLx\Core\Controller {
 	/**
 	 * Delete File or Dir
 	 */
-	// public function delete($segments) {
-		// $params = \CLx\Core\Request::params();
-// 		
-		// $token = isset($params['token']) ? $params['token'] : NULL;
-// 
-		// if($username = $this->auth_model->updateToken($token)) {
-			// define('FILE_LOCATE', $this->file_config['locate'] . $username);
-//
-// 			// Initialize SimFS
-			// SimFS::init(FILE_LOCATE);
-// 			
-			// $path = $this->file_model->parsePath($segments);
-			// $current_path = FILE_LOCATE . $path;
-// 			
-			// if(file_exists($current_path) && $path != '') {
-				// if(is_dir($current_path)) {
-					// if(!$this->file_model->recursiveRmdir($current_path))
-						// StatusCode::setStatus(3006);
-// 					
-					// if(!StatusCode::isError()) {
-						// \CLx\Core\Event::trigger('file_change', array(
-							// 'user' => $username,
-							// 'token' => $token,
-							// 'send' => array(
-								// 'action' => 'delete',
-								// 'type' => 'dir',
-								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							// )
-						// ));
-					// }
-				// }
-				// else {
-					// if(!unlink($current_path))
-						// StatusCode::setStatus(3006);
-// 					
-					// if(!StatusCode::isError()) {
-						// \CLx\Core\Event::trigger('file_change', array(
-							// 'user' => $username,
-							// 'token' => $token,
-							// 'send' => array(
-								// 'action' => 'delete',
-								// 'type' => 'file',
-								// 'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							// )
-						// ));
-					// }
-				// }
-			// }
-			// else
-				// StatusCode::setStatus(3004);
-		// }
-// 
-		// \CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
-	// }
+	public function delete($segments) {
+		$headers = \CLx\Core\Request::headers();
+		
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
+			
+			// Initialize SimFS
+			SimFS::init(FILE_LOCATE);
+			
+			$path = $this->file_model->parsePath($segments);
+			
+			// Check file is exists
+			if(!SimFS::isExists($path))
+				StatusCode::setStatus(3004);
+			
+			// Load file or list
+			if(!StatusCode::isError()) {
+				if(SimFS::isDir($path)) {
+					if(SimFS::delete($path))
+						\CLx\Core\Event::trigger('file_change', array(
+							'user' => $username,
+							'token' => $token,
+							'send' => array(
+								'action' => 'delete',
+								'type' => 'dir',
+								'path' => $path
+							)
+						));
+					else
+						StatusCode::setStatus(3006);
+				}
+				else {
+					if(SimFS::delete($path))
+						\CLx\Core\Event::trigger('file_change', array(
+							'user' => $username,
+							'token' => $token,
+							'send' => array(
+								'action' => 'delete',
+								'type' => 'file',
+								'path' => $path
+							)
+						));
+					else
+						StatusCode::setStatus(3006);
+				}
+			}
+		}
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+	}
 }

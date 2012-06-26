@@ -18,7 +18,7 @@ $usage['service'] = array(
 			'output' => array(
 				array('list', 'array'),
 				array('usage', 'array'),
-				array('statuscode', 'array')
+				array('code', 'array')
 			)
 		)
 	)

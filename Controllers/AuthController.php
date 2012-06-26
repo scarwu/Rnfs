@@ -32,7 +32,7 @@ class AuthController extends \CLx\Core\Controller {
 		$password = isset($params['password']) ? $params['password'] : NULL;
 		
 		if($token = $this->auth_model->genToken($username, $password))
-			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus(), 'token' => $token));
+			\CLx\Core\Response::toJSON(array('token' => $token));
 		else
 			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
@@ -41,25 +41,29 @@ class AuthController extends \CLx\Core\Controller {
 	 * Update Token Alive Time
 	 */
 	public function update() {
-		$params = \CLx\Core\Request::params();
+		$headers = \CLx\Core\Request::headers();
 		
-		// Get params detail
-		$token = isset($params['token']) ? $params['token'] : NULL;
+		// Get headers detail
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		
 		$this->auth_model->updateToken($token);
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
 	 * Delete Token
 	 */
 	public function delete() {
-		$params = \CLx\Core\Request::params();
+		$headers = \CLx\Core\Request::headers();
 		
-		// Get params detail
-		$token = isset($params['token']) ? $params['token'] : NULL;
+		// Get headers detail
+		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
 		
 		$this->auth_model->deleteToken($token);
-		\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

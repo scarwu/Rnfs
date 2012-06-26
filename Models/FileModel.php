@@ -37,34 +37,7 @@ class FileModel extends \CLx\Core\Model {
 				$value = str_replace($blacklist, '', $value);
 				$path .= $path == '/' ? $value : '/' . $value;
 			}
-		return $path == '/' ? '' : $path;
-	}
-
-	/**--------------------------------------------------
-	 * Recursive Remove Dir
-	 * --------------------------------------------------
-	 * @param	string $path
-	 * @return	boolean
-	 */
-	public function recursiveRmdir($path = NULL) {
-		if(is_dir($path)) {
-			$handle = @opendir($path);
-			while($file = readdir($handle))
-				if($file != '.' && $file != '..')
-					$this->recursiveRmdir($path . DIRECTORY_SEPARATOR . $file);
-			closedir($handle);
-			
-			if(rmdir($path))
-				return TRUE;
-			else
-				return FALSE;
-		}
-		else {
-			if(unlink($path))
-				return TRUE;
-			else
-				return FALSE;
-		}
+		return $path;
 	}
 
 	/**--------------------------------------------------
@@ -78,19 +51,19 @@ class FileModel extends \CLx\Core\Model {
 			if($handle = @opendir($current_path = FILE_LOCATE . $path)) {
 				$filelist = array();
 				while($file = readdir($handle))
-					array_push($filelist, $file);
+					$filelist[] = $file;
 				sort($filelist);
 				foreach((array)$filelist as $dir)
 					if($dir != '.' && $dir != '..') {
 						if(@filetype($current_path. DIRECTORY_SEPARATOR . $dir) != 'dir')
-							array_push($this->list, array(
+							$this->list[] = array(
 								'hash' => @md5_file($current_path . DIRECTORY_SEPARATOR . $dir),
 								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path . '/' . $dir)
-							));
+							);
 						else
-							array_push($this->list, array(
+							$this->list[] = array(
 								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path . '/' . $dir),
-							));
+							);
 						$this->getFileHashList($path . '/' . $dir);
 					}
 				closedir($handle);
@@ -111,12 +84,12 @@ class FileModel extends \CLx\Core\Model {
 			if($handle = @opendir($current_path = FILE_LOCATE . $path)) {
 				while($dir = readdir($handle))
 					if($dir != '.' && $dir != '..') {
-						array_push($this->list, array(
+						$this->list[] = array(
 							'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path. '/' . $dir),
 							'date' => @filectime($current_path . DIRECTORY_SEPARATOR . $dir),
 							'size' => @filesize($current_path . DIRECTORY_SEPARATOR . $dir),
 							'type' => @filetype($current_path . DIRECTORY_SEPARATOR . $dir)
-						));
+						);
 						$this->getFileList($path . '/' . $dir);
 					}
 				closedir($handle);
