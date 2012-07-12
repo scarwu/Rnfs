@@ -1,24 +1,26 @@
 <?php
 /**
- * Reborn File Model
+ * RNFileSystem File Model
  * 
- * @package		Reborn File Services
+ * @package		RESTful Network File System
  * @author		ScarWu
  * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
- * @link		http://github.com/scarwu/Reborn
+ * @link		http://github.com/scarwu/RNFileSystem
  */
 
 class FileModel extends \CLx\Core\Model {
+	
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->fileConfig = $this->load->config('file');
-		// Load Extend Library
-		$this->load->extLib('statusCode');
+		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+		
+		// Load Library
+		\CLx\Core\Loader::library('StatusCode');
 		
 		$this->list = array();
-		$this->size = 0;
 	}
 
 	/**--------------------------------------------------
@@ -28,43 +30,18 @@ class FileModel extends \CLx\Core\Model {
 	 * @return	string $path
 	 */
 	public function parsePath($segments = NULL) {
+		if(0 == count($segments))
+			return NULL;
+		
 		$blacklist = array('[', ']', '&', "'", '"', '?', '/', '\\', '#', ';');
-		$path = DIRECTORY_SEPARATOR;
+		$path = '/';
 		foreach((array)$segments as $value)
 			if($value != '.' || $value != '..') {
 				$value = str_replace($blacklist, '', $value);
-				$path .= $path == DIRECTORY_SEPARATOR ? $value : DIRECTORY_SEPARATOR . $value;
+				$path .= $path == '/' ? $value : '/' . $value;
 			}
-		return $path == DIRECTORY_SEPARATOR ? '' : $path;
+		return $path;
 	}
-
-	/**--------------------------------------------------
-	 * Recursive Remove Dir
-	 * --------------------------------------------------
-	 * @param	string $path
-	 * @return	boolean
-	 */
-	public function recursiveRmdir($path = NULL) {
-		if(is_dir($path)) {
-			$handle = @opendir($path);
-			while($file = readdir($handle))
-				if($file != '.' && $file != '..')
-					$this->recursiveRmdir($path . DIRECTORY_SEPARATOR . $file);
-			closedir($handle);
-			
-			if(rmdir($path))
-				return TRUE;
-			else
-				return FALSE;
-		}
-		else {
-			if(unlink($path))
-				return TRUE;
-			else
-				return FALSE;
-		}
-	}
-
 
 	/**--------------------------------------------------
 	 * Get File Hash List
@@ -74,22 +51,22 @@ class FileModel extends \CLx\Core\Model {
 	 */
 	public function getFileHashList($path = NULL) {
 		if(NULL !== $path) {
-			if($handle = @opendir($currentPath = FILE_LOCATE . $path)) {
+			if($handle = @opendir($current_path = FILE_LOCATE . $path)) {
 				$filelist = array();
 				while($file = readdir($handle))
-					array_push($filelist, $file);
+					$filelist[] = $file;
 				sort($filelist);
 				foreach((array)$filelist as $dir)
 					if($dir != '.' && $dir != '..') {
-						if(@filetype($currentPath. DIRECTORY_SEPARATOR . $dir) != 'dir')
-							array_push($this->list, array(
-								'hash' => @md5_file($currentPath . DIRECTORY_SEPARATOR . $dir),
-								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->fileConfig['encode'], $path . '/' . $dir)
-							));
+						if(@filetype($current_path. DIRECTORY_SEPARATOR . $dir) != 'dir')
+							$this->list[] = array(
+								'hash' => @md5_file($current_path . DIRECTORY_SEPARATOR . $dir),
+								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path . '/' . $dir)
+							);
 						else
-							array_push($this->list, array(
-								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->fileConfig['encode'], $path . '/' . $dir),
-							));
+							$this->list[] = array(
+								'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path . '/' . $dir),
+							);
 						$this->getFileHashList($path . '/' . $dir);
 					}
 				closedir($handle);
@@ -107,43 +84,21 @@ class FileModel extends \CLx\Core\Model {
 	 */
 	public function getFileList($path = NULL) {
 		if(NULL !== $path) {
-			if($handle = @opendir($currentPath = FILE_LOCATE . $path)) {
+			if($handle = @opendir($current_path = FILE_LOCATE . $path)) {
 				while($dir = readdir($handle))
 					if($dir != '.' && $dir != '..') {
-						array_push($this->list, array(
-							'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->fileConfig['encode'], $path. '/' . $dir),
-							'date' => @filectime($currentPath . DIRECTORY_SEPARATOR . $dir),
-							'size' => @filesize($currentPath . DIRECTORY_SEPARATOR . $dir),
-							'type' => @filetype($currentPath . DIRECTORY_SEPARATOR . $dir)
-						));
+						$this->list[] = array(
+							'path' => iconv(mb_detect_encoding($path . '/' . $dir), $this->file_config['encode'], $path. '/' . $dir),
+							'date' => @filectime($current_path . DIRECTORY_SEPARATOR . $dir),
+							'size' => @filesize($current_path . DIRECTORY_SEPARATOR . $dir),
+							'type' => @filetype($current_path . DIRECTORY_SEPARATOR . $dir)
+						);
 						$this->getFileList($path . '/' . $dir);
 					}
 				closedir($handle);
 			}
 			sort($this->list);
 			return $this->list;
-		}
-		return FALSE;
-	}
-	
-	/**--------------------------------------------------
-	 * Get All File Size
-	 * --------------------------------------------------
-	 * @param	string $path
-	 * @return	array $list
-	 */
-	public function getAllFileSize($path = NULL) {
-		if(NULL !== $path) {
-			if($handle = @opendir($currentPath = FILE_LOCATE . $path)) {
-				while($dir = readdir($handle))
-					if($dir != '.' && $dir != '..') {
-						if(is_file($currentPath . DIRECTORY_SEPARATOR . $dir))
-							$this->size += @filesize($currentPath . DIRECTORY_SEPARATOR . $dir);
-						$this->getAllFileSize($path . '/' . $dir);
-					}
-				closedir($handle);
-			}
-			return $this->size;
 		}
 		return FALSE;
 	}

@@ -1,12 +1,12 @@
 <?php
 /**
- * Reborn Status Code Library
+ * RNFileSystem Status Code Library
  * 
- * @package		Reborn File Services
+ * @package		RESTful Network File System
  * @author		ScarWu
  * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
- * @link		http://github.com/scarwu/Reborn
+ * @link		http://github.com/scarwu/RNFileSystem
  */
 
 class StatusCode {
@@ -19,19 +19,17 @@ class StatusCode {
 		1000 => array(200, 'OK'),
 		
 		// Something was missing
-		2000 => array(400, 'Token is missing'),
+		2000 => array(401, 'Token is missing'),
 		2001 => array(400, 'Username is missing'),
 		2002 => array(400, 'Password is missing'),
 		2003 => array(400, 'E-mail is missing'),
-		2004 => array(400, 'Path is missing'),
-		2005 => array(400, 'Newpath is missing'),
 		
 		// Something was error
 		3000 => array(401, 'Token is invaild'),
-		3001 => array(404, 'User is\'t found'),
+		3001 => array(404, 'User isn\'t found'),
 		3002 => array(403, 'Username or Password Error'),
 		3003 => array(403, 'User is existence'),
-		3004 => array(404, 'Path is not found'),
+		3004 => array(404, 'File or dir is not found'),
 		3005 => array(400, 'Upload failed'),
 		3006 => array(403, 'File operations Error'),
 		3007 => array(403, 'File or dir is existence'),
@@ -49,11 +47,11 @@ class StatusCode {
 	 * Set Status Code
 	 * --------------------------------------------------
 	 */
-	public static function SetStatus($code) {
+	public static function setStatus($code) {
 		if(FALSE == self::$_is_error && 1000 != $code && isset(self::$_error_code[$code])) {
 			self::$_is_error = TRUE;
 			self::$_code = $code;
-			\CLx\Core\Response::HTTPCode(self::$_error_code[$code][0]);
+			\CLx\Core\Response::setCode(self::$_error_code[$code][0]);
 		}
 	}
 	
@@ -61,29 +59,24 @@ class StatusCode {
 	 * Get Status Code
 	 * --------------------------------------------------
 	 */
-	public static function GetStatus() {
+	public static function getStatus() {
 		if(1000 == self::$_code)
-			\CLx\Core\Response::HTTPCode(200);
+			\CLx\Core\Response::setCode(200);
 		
-		return array(
-			'http' => self::$_error_code[self::$_code][0],
-			'code' => self::$_code,
-			'msg' => self::$_error_code[self::$_code][1]
-		);
+		return array(self::$_code => self::$_error_code[self::$_code][1]);
 	}
 	
 	/**--------------------------------------------------
 	 * Get Status List
 	 * --------------------------------------------------
 	 */
-	public static function GetStatusList() {
+	public static function getStatusList() {
 		$list = array();
 		foreach((array)self::$_error_code as $key => $value)
-			array_push($list, array(
-				'code' => $key,
-				'http' => $value[0],
-				'msg' => $value[1]
-			));
+			$list[$key] = array(
+				'status' => $value[0],
+				'message' => $value[1]
+			);
 		
 		return $list;
 	}
@@ -92,7 +85,7 @@ class StatusCode {
 	 * Is Error
 	 * --------------------------------------------------
 	 */
-	public static function IsError() {
-		return 1000 != self::$_code;
+	public static function isError() {
+		return self::$_is_error;
 	}
 }

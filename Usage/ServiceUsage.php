@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem Sync API Usage
+ * RNFileSystem Services API Usage
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -9,19 +9,16 @@
  * @link		http://github.com/scarwu/RNFileSystem
  */
 
-$usage['sync'] = array(
-	'POST' => array(
+$usage['service'] = array(
+	'GET' => array(
 		array(
-			'description' => 'Create Server push.',
-			'API' => '/sync/{username}',
-			'input' => array(
-				array('token', 'string', 24)
-			),
+			'description' => 'Obtain service list and service usage.',
+			'API' => '/service',
+			'input' => array(),
 			'output' => array(
-				array('status', 'array'),
-				array('action', 'string'),
-				array('type', 'string'),
-				array('path', 'steing')
+				array('list', 'array'),
+				array('usage', 'array'),
+				array('code', 'array')
 			)
 		)
 	)

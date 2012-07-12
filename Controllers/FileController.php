@@ -1,336 +1,281 @@
 <?php
 /**
- * Reborn Files Controller
+ * RNFileSystem Files Controller
  * 
- * @package		Reborn File Services
+ * @package		RESTful Network File System
  * @author		ScarWu
  * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
- * @link		http://github.com/scarwu/Reborn
+ * @link		http://github.com/scarwu/RNFileSystem
  */
 
 class FileController extends \CLx\Core\Controller {
-	private $locate;
-	private $encode;
 
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Config
-		$this->fileConfig = $this->load->config('file');
+		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+
 		// Load Library
-		$this->load->sysLib('db');
-		$this->load->sysLib('event');
-		// Load Extend Library
-		$this->load->extLib('statusCode');
+		\CLx\Core\Loader::library('StatusCode');
+		\CLx\Core\Loader::library('VirFL');
+		
 		// Load Model
-		$this->load->model('authModel');
-		$this->load->model('fileModel');
+		$this->auth_model = \CLx\Core\Loader::model('Auth');
+		$this->file_model = \CLx\Core\Loader::model('File');
 	}
 	
 	/**
-	 * Upload File or Make Directory
-	 * Input:
-	 * 		API: /files/{upload path.../upload file or directory name}
-	 * 		params(apikey, token),
-	 * 		POST file (form-data)
-	 * Output:
-	 * 		status: 200, 302, 404
-	 * 
-	 * 2011/12/21 CCLien
+	 * Get File or List
 	 */
-	public function create() {
-		$segments = request::segments();
-		$params = request::params();
-		$files = request::files();
+	public function read($segments) {
+		$headers = \CLx\Core\Request::headers();
+		$params = \CLx\Core\Request::params();
 		
-		$token = isset($params['token']) ? $params['token'] : NULL;
-		
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		$version = isset($params['version']) ? $params['version'] : 0;
 
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
-
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			if(!file_exists($currentPath) && $path != '') {
-				if($files != NULL) {
-					// File Upload Handler
-					if(0 != $files['error'])
-						statusCode::setStatus(3005);
-					
-					if($files['size'] + $this->fileModel->getAllFileSize('/') > $this->fileConfig['capacity'])
-						statusCode::setStatus(4000);
-					
-					if(!statusCode::isError()) {
-						$dirpath = $segments;
-						array_pop($dirpath);
-						$dirpath = FILE_LOCATE . $this->fileModel->parsePath($dirpath);
-						
-						if(!file_exists($dirpath))
-							mkdir($dirpath, 0755, TRUE);
-						
-						if(!move_uploaded_file($files['tmp_name'], $currentPath))
-							statusCode::setStatus(3006);
-					}
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'create',
-								'type' => 'file',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							)
-						));
-					}
-				}
-				else {
-					// Create New Dir
-					if(!mkdir($currentPath, 0755, TRUE))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'create',
-								'type' => 'dir',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
-							)
-						));
-					}
-				}
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
+			
+			$path = $this->file_model->parsePath($segments);
+			
+			// Check file is exists
+			if(!VirFL::isExists($path))
+				StatusCode::setStatus(3004);
+			
+			// Load file or list
+			if(!StatusCode::isError()) {
+				if(VirFL::isDir($path))
+					CLx\Core\Response::toJSON(VirFL::index($path));
+				else
+					VirFL::read($path, NULL, $version);
 			}
-			else
-				statusCode::setStatus(3007);
 		}
-
-		$this->view->json(array('status' => statusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
-	 * Get User's Directory List or Download a file.
-	 * Input:
-	 * 		API: /files/{download path}, 
-	 * 		params(apikey, token)
-	 * Output:
-	 * 		status: 200, 404
-	 * 		{dirlist: {path, date, size, type}}
-	 * 		{download file stream}
-	 * 
-	 * 2011/12/21 CCLien
+	 * Create File
 	 */
-	public function read() {
-		$segments = request::segments();
-		$params = request::params();
+	public function create($segments) {
+		$headers = \CLx\Core\Request::headers();
+		$files = \CLx\Core\Request::files();
 		
-		$token = isset($params['token']) ? $params['token'] : NULL;
-
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
 			
-			if(file_exists($currentPath) && is_file($currentPath)) {
-				$filerange = isset($params['filerange']) ? $params['filerange'] : NULL;
-
-				$filesize = filesize($currentPath);
-				$filename = $segments[count($segments) - 1];
+			$path = $this->file_model->parsePath($segments);
+			
+			// Check file is exists
+			if(VirFL::isExists($path))
+				StatusCode::setStatus(3007);
 				
-				if($filerange == NULL) {
-					header('Accept-Ranges: bytes');
-					header('Content-Length: '. $filesize); 
-					header('HTTP/1.1 200 OK'); 
-					header('Content-Type: ' . $this->fileModel->getMimetype($currentPath));
-					header('Content-Disposition: attachment; filename=' . $filename);
-					
-					ob_end_flush();
-					readfile($currentPath);
+			if(NULL !== $files && !StatusCode::isError()) {
+				// File Upload Handler
+				if(0 !== $files['error'])
+					StatusCode::setStatus(3005);
+				
+				// Check capacity used
+				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
+					StatusCode::setStatus(4000);
+				
+				if(!StatusCode::isError()) {
+					// VirFL Create File
+					if(!VirFL::create($path, $files['tmp_name']))
+						StatusCode::setStatus(3006);
 				}
-				else {
-					$fp = fopen($currentPath, 'rb');
-					
-					header('Accept-Ranges: bytes');
-					header('Content-Length: '. ($filesize - $range)); 
-					header('HTTP/1.1 206 Partial Content'); 
-					header('Content-Type: ' . $this->fileModel->getMimetype($currentPath));
-					header('Content-Disposition: attachment; filename=' . $filename. '.tmp');
-					header('Content-Range: bytes=' . $filerange . '-' . ($filesize - 1) . '/' . ($filesize)); 
-					
-					ob_end_flush();
-					fseek($fp, $filerange);
-					fpassthru($fp);
+				
+				// Unlink temp file
+				unlink($files['tmp_name']);
+				
+				if(!StatusCode::isError()) {
+					\CLx\Core\Event::trigger('file_change', array(
+						'user' => $username,
+						'token' => $token,
+						'send' => array(
+							'action' => 'create',
+							'type' => 'file',
+							'path' => $path
+						)
+					));
 				}
 			}
-			else {
-				statusCode::setStatus(3004);
-				$this->view->json(array('status' => statusCode::getStatus()));
+			elseif(!StatusCode::isError()) {
+				// Create New Dir
+				if(!VirFL::create($path))
+					StatusCode::setStatus(3006);
+				
+				if(!StatusCode::isError()) {
+					\CLx\Core\Event::trigger('file_change', array(
+						'user' => $username,
+						'token' => $token,
+						'send' => array(
+							'action' => 'create',
+							'type' => 'dir',
+							'path' => $path
+						)
+					));
+				}
 			}
 		}
-		else
-			$this->view->json(array('status' => statusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
-	 * Update User's Directory or File.
-	 * Input:
-	 * 		API: /files/{Update path}, 
-	 * 		params(apikey, token, rename),
-	 * 		PUT file (form-data)
-	 * Output:
-	 * 		status: 200, 404
-	 * 
-	 * 2011/12/21 CCLien
+	 * Update File
 	 */
-	public function update() {
-		$segments = request::segments();
-		$params = request::params();
-		$files = request::files();
+	public function update($segments) {
+		$headers = \CLx\Core\Request::headers();
+		$files = \CLx\Core\Request::files();
 		
-		$token = isset($params['token']) ? $params['token'] : NULL;
-
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
 			
-			$newpath = isset($params['newpath']) ? $params['newpath'] : NULL;
-			$newpath = explode('/', trim($newpath, '/'));
-			$newpath = $this->fileModel->parsePath($newpath);
+			$path = $this->file_model->parsePath($segments);
 			
-			if(file_exists($currentPath) && $path != '') {
-				if($files != NULL) {
-					if(0 != $files['error'] || md5_file($files['tmp_name']) == md5_file($currentPath))
-						statusCode::setStatus(3005);
-					
-					if(($files['size'] - filesize($currentPath)) + $this->fileModel->getAllFileSize('/') > $this->fileConfig['capacity'])
-						statusCode::setStatus(4000);
-					
-					if(!statusCode::isError()) {
-						$dirpath = $segments;
-						array_pop($dirpath);
-						$dirpath = FILE_LOCATE . $this->fileModel->parsePath($dirpath);
-						
-						if(!file_exists($dirpath))
-							mkdir($dirpath, 0755, TRUE);
-						
-						if(!unlink($currentPath) || !copy($files['tmp_name'], $currentPath))
-							statusCode::setStatus(3006);
-					}
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'update',
-								'type' => 'file',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path),
-								'hash' => md5_file($currentPath)
-							)
-						));
-					}
+			// Check Old Path
+			if(!VirFL::isExists($path))
+				StatusCode::setStatus(3004);
+			
+			if(NULL !== $files && !StatusCode::isError()) {
+				// File Upload Handler
+				if(0 !== $files['error'])
+					StatusCode::setStatus(3005);
+				
+				// Check capacity used
+				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
+					StatusCode::setStatus(4000);
+				
+				if(!StatusCode::isError()) {
+					// VirFL Create File
+					if(!VirFL::update($path, $files['tmp_name']))
+						StatusCode::setStatus(3006);
 				}
-				else if($newpath !== NULL && !file_exists(FILE_LOCATE . $newpath) ) {
-					if(!rename($currentPath, FILE_LOCATE . $newpath))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
-							'user' => $username,
-							'token' => $token,
-							'send' => array(
-								'action' => 'rename',
-								'type' => is_dir(FILE_LOCATE . $newpath) ? 'dir' : 'file',
-								'oldpath' => str_replace(DIRECTORY_SEPARATOR, '/', $path),
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $newpath)
-							)
-						));
-					}
+				
+				// Unlink temp file
+				unlink($files['tmp_name']);
+				
+				if(!StatusCode::isError()) {
+					\CLx\Core\Event::trigger('file_change', array(
+						'user' => $username,
+						'token' => $token,
+						'send' => array(
+							'action' => 'update',
+							'type' => 'file',
+							'path' => $path,
+							'hash' => NULL
+						)
+					));
 				}
 			}
-			else
-				statusCode::setStatus(3007);
+			elseif(!StatusCode::isError()) {
+				$params = \CLx\Core\Request::params();
+				
+				$new_path = isset($params['path']) ? $params['path'] : NULL;
+				$new_path = $this->file_model->parsePath(explode('/', trim($new_path, '/')));
+				
+				// Check Old Path and New Path
+				if(NULL !== $new_path && VirFL::isExists($new_path))
+					StatusCode::setStatus(3007);
+				
+				if(!StatusCode::isError()) {
+					// Move path
+					if(!VirFL::move($path, $new_path))
+						StatusCode::setStatus(3006);
+				}
+				
+				if(!StatusCode::isError()) {
+					\CLx\Core\Event::trigger('file_change', array(
+						'user' => $username,
+						'token' => $token,
+						'send' => array(
+							'action' => 'rename',
+							'type' => VirFL::type($new_path),
+							'path' => $path,
+							'new_path' => $new_path
+						)
+					));
+				}
+			}
 		}
-
-		$this->view->json(array('status' => statusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 	
 	/**
-	 * Delete the Directory or File.
-	 * Input:
-	 * 		API: /files/{delete path}, 
-	 * 		params(apikey, token)
-	 * Output:
-	 * 		status: 200, 404
-	 * 
-	 * 2011/12/21 CCLien
+	 * Delete File or Dir
 	 */
-	public function delete() {
-		$segments = request::segments();
-		$params = request::params();
+	public function delete($segments) {
+		$headers = \CLx\Core\Request::headers();
 		
-		$token = isset($params['token']) ? $params['token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 
-		if($username = $this->authModel->updateToken($token)) {
-			define('FILE_LOCATE', $this->fileConfig['locate'] . $username);
-
-			if(!file_exists(FILE_LOCATE))
-				mkdir(FILE_LOCATE, 0755, TRUE);
+		if($username = $this->auth_model->updateToken($token)) {
+			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			$path = $this->fileModel->parsePath($segments);
-			$currentPath = FILE_LOCATE . $path;
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
 			
-			if(file_exists($currentPath) && $path != '') {
-				if(is_dir($currentPath)) {
-					if(!$this->fileModel->recursiveRmdir($currentPath))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
+			$path = $this->file_model->parsePath($segments);
+			
+			// Check file is exists
+			if(!VirFL::isExists($path))
+				StatusCode::setStatus(3004);
+			
+			// Load file or list
+			if(!StatusCode::isError()) {
+				if(VirFL::isDir($path)) {
+					if(VirFL::delete($path))
+						\CLx\Core\Event::trigger('file_change', array(
 							'user' => $username,
 							'token' => $token,
 							'send' => array(
 								'action' => 'delete',
 								'type' => 'dir',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+								'path' => $path
 							)
 						));
-					}
+					else
+						StatusCode::setStatus(3006);
 				}
 				else {
-					if(!unlink($currentPath))
-						statusCode::setStatus(3006);
-					
-					if(!statusCode::isError()) {
-						event::trigger('fileChange', array(
+					if(VirFL::delete($path))
+						\CLx\Core\Event::trigger('file_change', array(
 							'user' => $username,
 							'token' => $token,
 							'send' => array(
 								'action' => 'delete',
 								'type' => 'file',
-								'path' => str_replace(DIRECTORY_SEPARATOR, '/', $path)
+								'path' => $path
 							)
 						));
-					}
+					else
+						StatusCode::setStatus(3006);
 				}
 			}
-			else
-				statusCode::setStatus(3004);
 		}
-
-		$this->view->json(array('status' => statusCode::getStatus()));
+		
+		if(StatusCode::isError())
+			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

@@ -1,15 +1,15 @@
 <?php
 /**
- * Reborn File API Usage
+ * RNFileSystem File API Usage
  * 
- * @package		Reborn File Services
+ * @package		RESTful Network File System
  * @author		ScarWu
  * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
- * @link		http://github.com/scarwu/Reborn
+ * @link		http://github.com/scarwu/RNFileSystem
  */
 
-$Usage['file'] = array(
+$usage['file'] = array(
 	'POST' => array(
 		array(
 			'description' => 'Upload file or make directory.',

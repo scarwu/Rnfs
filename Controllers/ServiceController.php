@@ -1,27 +1,25 @@
 <?php
 /**
- * Reborn Service Controller
+ * RNFileSystem Service Controller
  * 
- * @package		Reborn File Services
+ * @package		RESTful Network File System
  * @author		ScarWu
  * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
- * @link		http://github.com/scarwu/Reborn
+ * @link		http://github.com/scarwu/RNFileSystem
  */
 
 class ServiceController extends \CLx\Core\Controller {
-	
-	/**
-	 * 
-	 */
+
 	public function __construct() {
 		parent::__construct();
+		
 		// Load Library
-		\CLx\Core\Loader::Library('StatusCode');
+		\CLx\Core\Loader::library('StatusCode');
 	}
 	
 	/**
-	 * 
+	 * Load service list
 	 */
 	public function read() {
 		// Load Usage
@@ -34,16 +32,15 @@ class ServiceController extends \CLx\Core\Controller {
 		
 		// Create List
 		$list = array();
-		foreach((array)$Usage as $key => $value)
-			array_push($list, $key);
+		foreach((array)$usage as $key => $value)
+			$list[] = $key;
 		sort($list);
-
+		
 		// Send Json
-		\CLx\Core\Response::ToJSON(array(
-			'status' => StatusCode::GetStatus(),
+		\CLx\Core\Response::toJSON(array(
 			'list' => $list,
-			'usage' => $Usage,
-			'statuscode' => StatusCode::GetStatusList()
+			'usage' => $usage,
+			'code' => StatusCode::getStatusList()
 		));
 	}
 }
