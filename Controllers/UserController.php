@@ -34,7 +34,7 @@ class UserController extends \CLx\Core\Controller {
 		$params = \CLx\Core\Request::params();
 		
 		// Get headers & segments detail
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		
 		if(NULL == $username)
@@ -92,7 +92,7 @@ class UserController extends \CLx\Core\Controller {
 		$params = \CLx\Core\Request::params();
 		
 		// Get headers & segments detail
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		
 		if(NULL == $username)
@@ -121,7 +121,7 @@ class UserController extends \CLx\Core\Controller {
 		$params = \CLx\Core\Request::params();
 		
 		// Get headers & segments detail
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		
 		if(NULL == $username)

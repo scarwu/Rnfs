@@ -33,7 +33,7 @@ class FileController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		$version = isset($params['version']) ? $params['version'] : 0;
 
 		if($username = $this->auth_model->updateToken($token)) {
@@ -68,7 +68,7 @@ class FileController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$files = \CLx\Core\Request::files();
 		
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
@@ -142,7 +142,7 @@ class FileController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$files = \CLx\Core\Request::files();
 		
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
@@ -228,7 +228,7 @@ class FileController extends \CLx\Core\Controller {
 	public function delete($segments) {
 		$headers = \CLx\Core\Request::headers();
 		
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);

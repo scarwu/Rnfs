@@ -44,7 +44,7 @@ class AuthController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		
 		// Get headers detail
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		
 		$this->auth_model->updateToken($token);
 		
@@ -59,7 +59,7 @@ class AuthController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		
 		// Get headers detail
-		$token = isset($headers['Reborn-Token']) ? $headers['Reborn-Token'] : NULL;
+		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
 		
 		$this->auth_model->deleteToken($token);
 		
