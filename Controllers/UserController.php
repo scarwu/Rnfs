@@ -45,9 +45,9 @@ class UserController extends \CLx\Core\Controller {
 		if(!StatusCode::isError()) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Load SimFS and Initialize
-			\CLx\Core\Loader::Library('SimFS');
-			SimFS::init(FILE_LOCATE, $this->file_config['revert']);
+			// Load VirFL and Initialize
+			\CLx\Core\Loader::Library('VirFL');
+			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
 			
 			// Load User Information
 			$result = $this->user_model->getUserUseUsername($username);
@@ -58,7 +58,7 @@ class UserController extends \CLx\Core\Controller {
 				'email' => $result[0]['email'],
 				'upload_limit' => $this->file_config['upload_limit'],
 				'capacity' => $this->file_config['capacity'],
-				'used' => SimFS::getUsed()
+				'used' => VirFL::getUsed()
 			));
 		}
 		else

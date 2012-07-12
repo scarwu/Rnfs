@@ -19,7 +19,7 @@ class FileController extends \CLx\Core\Controller {
 
 		// Load Library
 		\CLx\Core\Loader::library('StatusCode');
-		\CLx\Core\Loader::library('SimFS');
+		\CLx\Core\Loader::library('VirFL');
 		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
@@ -39,21 +39,21 @@ class FileController extends \CLx\Core\Controller {
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize SimFS
-			SimFS::init(FILE_LOCATE);
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
 			
 			$path = $this->file_model->parsePath($segments);
 			
 			// Check file is exists
-			if(!SimFS::isExists($path))
+			if(!VirFL::isExists($path))
 				StatusCode::setStatus(3004);
 			
 			// Load file or list
 			if(!StatusCode::isError()) {
-				if(SimFS::isDir($path))
-					CLx\Core\Response::toJSON(SimFS::index($path));
+				if(VirFL::isDir($path))
+					CLx\Core\Response::toJSON(VirFL::index($path));
 				else
-					SimFS::read($path, NULL, $version);
+					VirFL::read($path, NULL, $version);
 			}
 		}
 		
@@ -73,13 +73,13 @@ class FileController extends \CLx\Core\Controller {
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize SimFS
-			SimFS::init(FILE_LOCATE);
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
 			
 			$path = $this->file_model->parsePath($segments);
 			
 			// Check file is exists
-			if(SimFS::isExists($path))
+			if(VirFL::isExists($path))
 				StatusCode::setStatus(3007);
 				
 			if(NULL !== $files && !StatusCode::isError()) {
@@ -88,12 +88,12 @@ class FileController extends \CLx\Core\Controller {
 					StatusCode::setStatus(3005);
 				
 				// Check capacity used
-				if($files['size'] + SimFS::getUsed() > $this->file_config['capacity'])
+				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
 					StatusCode::setStatus(4000);
 				
 				if(!StatusCode::isError()) {
-					// SimFS Create File
-					if(!SimFS::create($path, $files['tmp_name']))
+					// VirFL Create File
+					if(!VirFL::create($path, $files['tmp_name']))
 						StatusCode::setStatus(3006);
 				}
 				
@@ -114,7 +114,7 @@ class FileController extends \CLx\Core\Controller {
 			}
 			elseif(!StatusCode::isError()) {
 				// Create New Dir
-				if(!SimFS::create($path))
+				if(!VirFL::create($path))
 					StatusCode::setStatus(3006);
 				
 				if(!StatusCode::isError()) {
@@ -147,8 +147,8 @@ class FileController extends \CLx\Core\Controller {
 		// if($username = $this->auth_model->updateToken($token)) {
 			// define('FILE_LOCATE', $this->file_config['locate'] . $username);
 //
-// 			// Initialize SimFS
-			// SimFS::init(FILE_LOCATE);
+// 			// Initialize VirFL
+			// VirFL::init(FILE_LOCATE);
 // 			
 			// $path = $this->file_model->parsePath($segments);
 			// $current_path = FILE_LOCATE . $path;
@@ -226,19 +226,19 @@ class FileController extends \CLx\Core\Controller {
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize SimFS
-			SimFS::init(FILE_LOCATE);
+			// Initialize VirFL
+			VirFL::init(FILE_LOCATE);
 			
 			$path = $this->file_model->parsePath($segments);
 			
 			// Check file is exists
-			if(!SimFS::isExists($path))
+			if(!VirFL::isExists($path))
 				StatusCode::setStatus(3004);
 			
 			// Load file or list
 			if(!StatusCode::isError()) {
-				if(SimFS::isDir($path)) {
-					if(SimFS::delete($path))
+				if(VirFL::isDir($path)) {
+					if(VirFL::delete($path))
 						\CLx\Core\Event::trigger('file_change', array(
 							'user' => $username,
 							'token' => $token,
@@ -252,7 +252,7 @@ class FileController extends \CLx\Core\Controller {
 						StatusCode::setStatus(3006);
 				}
 				else {
-					if(SimFS::delete($path))
+					if(VirFL::delete($path))
 						\CLx\Core\Event::trigger('file_change', array(
 							'user' => $username,
 							'token' => $token,

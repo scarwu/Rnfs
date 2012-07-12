@@ -1,15 +1,15 @@
 <?php
 /**
- * Sim File System
+ * Virtual file layer
  * 
- * @package		SimFS
+ * @package		Reborn File Services
  * @author		ScarWu
  * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
  * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
- * @link		http://github.com/scarwu/SimFS
+ * @link		http://github.com/scarwu/Reborn
  */
 
-class SimFS {
+class VirFL {
 	
 	/**
 	 * @var string
@@ -38,6 +38,10 @@ class SimFS {
 		if(NULL !== $revert)
 			self::$_revert = $revert;
 		
+		// Make root folder
+		if(!file_exists(self::$_root))
+			mkdir(self::$_root, 0755, TRUE);
+		
 		// Load files record list
 		if(file_exists(self::$_root . '/record.json')) {
 			$handle = fopen(self::$_root . '/record.json', 'r');
@@ -47,12 +51,10 @@ class SimFS {
 			self::$_record = json_decode($json, TRUE);
 			fclose($handle);
 		}
-		else
-			self::create('/');
-		
-		// Make root folder
-		if(!file_exists(self::$_root))
-			mkdir(self::$_root, 0755, TRUE);
+		else {
+			self::$_record['/']['type'] = 'dir';
+			self::save();
+		}
 	}
 	
 	/**
@@ -68,8 +70,22 @@ class SimFS {
 	/**
 	 * Index Files
 	 */
-	public static function index($path='/') {
-		return self::$_record;
+	public static function index($path = '/') {
+		if('/' === $path)
+			return self::$_record;
+		else {
+			$list = NULL;
+			
+			if(isset(self::$_record[$path]))
+				$list[$path] = self::$_record[$path];
+			
+			$regex_path = sprintf('/^\/%s\//', str_replace('/', '\/', trim($path, '/')));
+			foreach(self::$_record as $key => $value)
+				if(preg_match($regex_path, $key))
+					$list[$key] = $value;
+				
+			return $list;
+		}
 	}
 	
 	/**
@@ -125,7 +141,7 @@ class SimFS {
 	}
 	
 	/**
-	 * Create File or Create Dir
+	 * Create File or Create Directory
 	 * 
 	 * @param string
 	 * @param string
@@ -136,13 +152,16 @@ class SimFS {
 			if(!file_exists($real_path) || self::isExists($sim_path))
 				return FALSE;
 			
+			// Create full directory path
+			self::createFullDirPath($sim_path, 'file');
+			
 			// Generate Unique-Hash for File
 			do {
 				$hash = hash('md5', rand());
 			}
 			while(file_exists(self::$_root . '/' . $hash));
 			
-			// Copy Real File to SimFS
+			// Copy Real File to VirFL
 			if(!copy($real_path, self::$_root . '/' . $hash))
 				return FALSE;
 			
@@ -157,14 +176,43 @@ class SimFS {
 			if(self::isExists($sim_path))
 				return FALSE;
 	
-			// Add new record
-			self::$_record[$sim_path] = array(
-				'type' => 'dir'
-			);
+			// Create full directory path
+			self::createFullDirPath($sim_path, 'dir');
 		}
 		
 		// Record Write-back
 		self::save();
+		return TRUE;
+	}
+	
+	/**
+	 * Create Full Directory File
+	 * 
+	 * @param string
+	 * @param string
+	 */
+	//FIXME
+	private static function createFullDirPath($path, $type) {
+		$segments = explode('/', trim($path, '/'));
+
+		// If type is file then pop filename
+		if('file' == $type)
+			unset($segments[count($segments)-1]);
+		
+		// Create
+		$full_path = '';
+		foreach($segments as $segment) {
+			$full_path .= '/' . $segment;
+			if(!isset(self::$_record[$full_path]))
+				// Add new record
+				self::$_record[$full_path]['type'] = 'dir';
+			elseif('file' != self::$_record[$full_path]['type'])
+				// Add new record
+				self::$_record[$full_path]['type'] = 'dir';
+			else
+				return FALSE;
+		}
+		
 		return TRUE;
 	}
 	
@@ -185,7 +233,7 @@ class SimFS {
 		}
 		while(file_exists(self::$_root . '/' . $hash));
 		
-		// Copy Real File to SimFS
+		// Copy Real File to VirFL
 		if(!copy($real_path, self::$_root . '/' . $hash))
 			return FALSE;
 		
@@ -243,17 +291,42 @@ class SimFS {
 		if(!isset(self::$_record[$path]))
 			return FALSE;
 		
-		// Delete All File version
-		foreach(self::$_record[$path]['hash'] as $version)
-			if(!unlink(self::$_root . '/' . $version))
-				return FALSE;
-		
-		// Delete record
-		unset(self::$_record[$path]);
+		if('file' == self::$_record[$path]['type']) {
+			self::removeAllFileVersion($path);
+		}
+		else {
+			unset(self::$_record[$path]);
+			
+			$regex_path = sprintf('/^\/%s\//', str_replace('/', '\/', trim($path, '/')));
+			foreach(self::$_record as $path => $data) {
+				if(preg_match($regex_path, $path)) {
+					if('file' == self::$_record[$path]['type'])
+						self::removeAllFileVersion($path);
+					else
+						unset(self::$_record[$path]);
+				}
+			}
+		}
 		
 		// Record Write-back
 		self::save();
 		return TRUE;
+	}
+	
+	/**
+	 * Remove All File Version
+	 * 
+	 * @param string
+	 */
+	//FIXME
+	private static function removeAllFileVersion($path) {
+		// Delete All File version
+		foreach(self::$_record[$path]['hash'] as $version)
+			if(!unlink(self::$_root . '/' . $version))
+				return FALSE;
+			
+		// Delete record
+		unset(self::$_record[$path]);
 	}
 	
 	/**
