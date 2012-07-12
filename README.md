@@ -1,9 +1,9 @@
-Reborn
+RNFileSystem
 ======
 
 ### Description
 
-The RESTful File Services (from the Cixty-Nanotube)
+The RESTful File Service (from the Cixty-Nanotube)
 
 ### Requirement
 
