@@ -33,7 +33,7 @@ class FileController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
-		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 		$version = isset($params['version']) ? $params['version'] : 0;
 
 		if($username = $this->auth_model->updateToken($token)) {
@@ -43,7 +43,7 @@ class FileController extends \CLx\Core\Controller {
 			VirFL::init(FILE_LOCATE);
 			
 			$path = $this->file_model->parsePath($segments);
-			
+
 			// Check file is exists
 			if(!VirFL::isExists($path))
 				StatusCode::setStatus(3004);
@@ -68,7 +68,7 @@ class FileController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$files = \CLx\Core\Request::files();
 		
-		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
@@ -142,7 +142,7 @@ class FileController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$files = \CLx\Core\Request::files();
 		
-		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
@@ -223,12 +223,12 @@ class FileController extends \CLx\Core\Controller {
 	}
 	
 	/**
-	 * Delete File or Dir
+	 * Delete File or Directory
 	 */
 	public function delete($segments) {
 		$headers = \CLx\Core\Request::headers();
 		
-		$token = isset($headers['RNFS-Token']) ? $headers['RNFS-Token'] : NULL;
+		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 
 		if($username = $this->auth_model->updateToken($token)) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);

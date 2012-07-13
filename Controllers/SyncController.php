@@ -24,10 +24,11 @@ class SyncController extends \CLx\Core\Controller {
 	}
 
 	public function create($segments) {
+		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
+		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
-		$token = isset($params['token']) ? $params['token'] : NULL;
 		
 		if(NULL == $username)
 			StatusCode::setStatus(2001);
