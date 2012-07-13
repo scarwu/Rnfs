@@ -30,9 +30,6 @@ class FileModel extends \CLx\Core\Model {
 	 * @return	string $path
 	 */
 	public function parsePath($segments = NULL) {
-		if(0 == count($segments))
-			return NULL;
-		
 		$blacklist = array('[', ']', '&', "'", '"', '?', '/', '\\', '#', ';');
 		$path = '/';
 		foreach((array)$segments as $value)

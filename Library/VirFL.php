@@ -129,11 +129,26 @@ class VirFL {
 		if(!isset(self::$_record[$sim_src]) || isset(self::$_record[$sim_dest]))
 			return FALSE;
 		
+		// Create full directory path
+		self::createFullDirPath($sim_dest, self::type($sim_src));
+		
 		// Change old path to new path
 		self::$_record[$sim_dest] = self::$_record[$sim_src];
 		
 		// Unset old path
 		unset(self::$_record[$sim_src]);
+		
+		// Change sub directory to new path
+		$regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
+		
+		foreach(self::$_record as $path => $data) {
+			if(preg_match($regex_path, $path, $match)) {
+				self::$_record[$sim_dest . '/' . $match[1]] = $data;
+				
+				// Unset old path
+				unset(self::$_record[$path]);
+			}
+		}
 		
 		// Record Write-back
 		self::save();
@@ -297,9 +312,13 @@ class VirFL {
 			self::removeAllFileVersion($path);
 		}
 		else {
-			unset(self::$_record[$path]);
+			if('/' !== $path) {
+				unset(self::$_record[$path]);
+				$regex_path = sprintf('/^\/%s\//', str_replace('/', '\/', trim($path, '/')));
+			}
+			else
+				$regex_path = '/^\/.+/';
 			
-			$regex_path = sprintf('/^\/%s\//', str_replace('/', '\/', trim($path, '/')));
 			foreach(self::$_record as $path => $data) {
 				if(preg_match($regex_path, $path)) {
 					if('file' == self::$_record[$path]['type'])
