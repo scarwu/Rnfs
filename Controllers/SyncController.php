@@ -34,40 +34,41 @@ class SyncController extends \CLx\Core\Controller {
 			StatusCode::setStatus(2001);
 
 		if($username == $this->auth_model->updateToken($token)) {
-			//FIXME
+			// Database Disconnect
 			\CLx\Library\Database::disconnect();
 			
 			if(!file_exists($this->sync_config['locate'] . $username))
 				@mkdir($this->sync_config['locate'] . $username, 0755, TRUE);
 			
-			$sockpath = $this->sync_config['locate'] . $username . DIRECTORY_SEPARATOR . $token;
+			$sync_path = $this->sync_config['locate'] . $username . DIRECTORY_SEPARATOR . $token;
 			
-			$startTime = time();
+			$start_time = time();
 			set_time_limit($this->sync_config['timeout']+5);
 			
-			if(file_exists($sockpath))
-				unlink($sockpath);
-
-			while(1) {
+			if(file_exists($sync_path))
+				unlink($sync_path);
+			
+			$loop = TRUE;
+			while($loop) {
 				if(PHP_OS == 'Linux')
 					usleep(1000);
 				else
 					sleep(1);
 				
-				if(file_exists($sockpath)) {
+				if(file_exists($sync_path)) {
 					$result = NULL;
-					$handle = fopen($sockpath, 'r');
+					$handle = fopen($sync_path, 'r');
 					while($data = fread($handle, 1024))
 						$result .= $data;
 					fclose($handle);
-					unlink($sockpath);
+					unlink($sync_path);
 					header('Content-Length: ' . strlen($result));
 					echo $result;
-					break;
+					$loop = FALSE;
 				}
-				elseif(time()-$startTime >= $this->sync_config['timeout']) {
+				elseif(time()-$start_time >= $this->sync_config['timeout']) {
 					\CLx\Core\Response::setCode(408);
-					break;
+					$loop = FALSE;
 				}
 			}
 		}

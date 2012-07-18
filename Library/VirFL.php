@@ -26,6 +26,11 @@ class VirFL {
 	 */
 	private static $_revert = 0;
 	
+	/**
+	 * @var boolean / int
+	 */
+	private static $_is_error = false;
+	
 	private function __construct() {}
 	
 	/**
@@ -390,12 +395,23 @@ class VirFL {
 	}
 	
 	/**
-	 * Check file or dir is exists
+	 * Check file or directory is exists
 	 * 
 	 * @param string
 	 */
 	public static function isExists($path) {
 		return isset(self::$_record[$path]);
+	}
+	
+	/**
+	 * Check whether an error occurred
+	 * 
+	 * @param boolean / integer
+	 */
+	public static function isError($path) {
+		$result = $_is_error;
+		self::$_is_error = false;
+		return $result;
 	}
 	
 	/**

@@ -1,15 +1,15 @@
 RNFileSystem
-======
+============
 
 ### Description
 
-The RESTful File Service (from the Cixty-Nanotube)
+RNFileSystem is a RESTful Network File System
 
 ### Requirement
 
-* CLx
-* Apache / Nginx + php-fpm / Nginx + hiphop-php
+* [CLx Framework](https://github.com/ScarWu/CLx)
+* Apache / Nginx + php-fpm / Nginx + hiphop-php (optional)
 * PHP 5.3+
-* MySQL
+* MySQL / SQLite (optional)
 
 Just for fun.
