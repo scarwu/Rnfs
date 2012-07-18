@@ -86,7 +86,7 @@ class FileController extends \CLx\Core\Controller {
 				// File Upload Handler
 				if(0 !== $files['error'])
 					StatusCode::setStatus(3005);
-				
+				print_r($files);
 				// Check capacity used
 				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
 					StatusCode::setStatus(4000);
@@ -98,7 +98,8 @@ class FileController extends \CLx\Core\Controller {
 				}
 				
 				// Unlink temp file
-				unlink($files['tmp_name']);
+				if(file_exists($files['tmp_name']))
+					unlink($files['tmp_name']);
 				
 				if(!StatusCode::isError()) {
 					\CLx\Core\Event::trigger('file_change', array(
@@ -172,7 +173,8 @@ class FileController extends \CLx\Core\Controller {
 				}
 				
 				// Unlink temp file
-				unlink($files['tmp_name']);
+				if(file_exists($files['tmp_name']))
+					unlink($files['tmp_name']);
 				
 				if(!StatusCode::isError()) {
 					\CLx\Core\Event::trigger('file_change', array(
