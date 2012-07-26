@@ -86,7 +86,7 @@ class FileController extends \CLx\Core\Controller {
 				// File Upload Handler
 				if(0 !== $files['error'])
 					StatusCode::setStatus(3005);
-				print_r($files);
+				
 				// Check capacity used
 				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
 					StatusCode::setStatus(4000);

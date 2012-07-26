@@ -10,7 +10,7 @@
  */
 
 $Config['auth'] = array(
-	'timeout' => 30000,
+	'timeout' => 300,
 	'connect' => 10
 );
 
