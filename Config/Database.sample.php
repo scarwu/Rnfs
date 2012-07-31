@@ -18,7 +18,7 @@ $Database['development'] = array(
 	'port' => 3306,
 	'user' => '',
 	'pass' => '',
-	'name' => 'reborn_development'
+	'name' => 'rnfs_development'
 );
 
 $Database['production'] = array(
@@ -27,7 +27,7 @@ $Database['production'] = array(
 	'port' => 3306,
 	'user' => '',
 	'pass' => '',
-	'name' => 'reborn_production'
+	'name' => 'rnfs_production'
 );
 
 $Database['test'] = array(
@@ -36,5 +36,5 @@ $Database['test'] = array(
 	'port' => 3306,
 	'user' => '',
 	'pass' => '',
-	'name' => 'reborn_test'
+	'name' => 'rnfs_test'
 );
