@@ -35,7 +35,7 @@ class StatusCode {
 		3007 => array(403, 'File or dir is existence'),
 		
 		// Other Error
-		4000 => array(403, 'Capacity is full'),
+		4000 => array(507, 'Capacity is full'),
 		4001 => array(403, 'File is over upload limit')
 	);
 	private static $_is_error = FALSE;

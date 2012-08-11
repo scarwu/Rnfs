@@ -37,6 +37,9 @@ class FileController extends \CLx\Core\Controller {
 		$version = isset($params['version']) ? $params['version'] : 0;
 
 		if($username = $this->auth_model->updateToken($token)) {
+			// Database Disconnect
+			\CLx\Library\Database::disconnect();
+			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
@@ -71,6 +74,9 @@ class FileController extends \CLx\Core\Controller {
 		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
+			// Database Disconnect
+			\CLx\Library\Database::disconnect();
+			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
@@ -146,6 +152,9 @@ class FileController extends \CLx\Core\Controller {
 		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
+			// Database Disconnect
+			\CLx\Library\Database::disconnect();
+			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
@@ -233,6 +242,9 @@ class FileController extends \CLx\Core\Controller {
 		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
 
 		if($username = $this->auth_model->updateToken($token)) {
+			// Database Disconnect
+			\CLx\Library\Database::disconnect();
+			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
