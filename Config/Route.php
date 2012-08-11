@@ -15,7 +15,7 @@
 header('Content-Type: none');
 
 // Regular Expression
-$regex_url = '/^\/(\w+)((?:\/.+)+)?/u';
+$regex_url = '/^\/(\w+)((?:\/(?:.|\n)+)+)?/u';
 
 /**
  * GET Method Route Rules
