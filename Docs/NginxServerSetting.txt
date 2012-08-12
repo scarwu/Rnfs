@@ -1,0 +1,24 @@
+server {
+	listen 3000 default;
+	root /var/www/Development/RNFileSystem/Boot;
+	server_name localhost;
+	client_max_body_size 256m;
+
+	location / {
+		index index.php;
+		if (!-e $request_filename) {
+			rewrite ^(.+)$ /index.php$1 last;
+		}
+	}
+
+	location ~ ^/index\.php {
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+		fastcgi_pass unix:/tmp/php-fpm.sock;
+		fastcgi_index index.php;
+		include fastcgi_params;
+	}
+	
+	location /.htaccess {
+		deny all;
+	}
+}

@@ -102,11 +102,7 @@ class FileController extends \CLx\Core\Controller {
 					if(!VirFL::create($path, $files['tmp_name']))
 						StatusCode::setStatus(3006);
 				}
-				
-				// Unlink temp file
-				if(file_exists($files['tmp_name']))
-					unlink($files['tmp_name']);
-				
+
 				if(!StatusCode::isError()) {
 					\CLx\Core\Event::trigger('file_change', array(
 						'user' => $username,
@@ -114,10 +110,16 @@ class FileController extends \CLx\Core\Controller {
 						'send' => array(
 							'action' => 'create',
 							'type' => 'file',
-							'path' => $path
+							'path' => $path,
+							'hash' => hash_file('md5', $files['tmp_name']),
+							'size' => $files['size']
 						)
 					));
 				}
+				
+				// Unlink temp file
+				if(file_exists($files['tmp_name']))
+					unlink($files['tmp_name']);
 			}
 			elseif(!StatusCode::isError()) {
 				// Create New Dir
@@ -181,10 +183,6 @@ class FileController extends \CLx\Core\Controller {
 						StatusCode::setStatus(3006);
 				}
 				
-				// Unlink temp file
-				if(file_exists($files['tmp_name']))
-					unlink($files['tmp_name']);
-				
 				if(!StatusCode::isError()) {
 					\CLx\Core\Event::trigger('file_change', array(
 						'user' => $username,
@@ -193,10 +191,15 @@ class FileController extends \CLx\Core\Controller {
 							'action' => 'update',
 							'type' => 'file',
 							'path' => $path,
-							'hash' => NULL
+							'hash' => hash_file('md5', $files['tmp_name']),
+							'size' => $files['size']
 						)
 					));
 				}
+				
+				// Unlink temp file
+				if(file_exists($files['tmp_name']))
+					unlink($files['tmp_name']);
 			}
 			elseif(!StatusCode::isError()) {
 				$params = \CLx\Core\Request::params();
