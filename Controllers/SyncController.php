@@ -61,7 +61,10 @@ class SyncController extends \CLx\Core\Controller {
 					while($data = fread($handle, 1024))
 						$result .= $data;
 					fclose($handle);
-					unlink($sync_path);
+					
+					if(file_exists($sync_path))
+						unlink($sync_path);
+					
 					header('Content-Length: ' . strlen($result));
 					echo $result;
 					$loop = FALSE;
