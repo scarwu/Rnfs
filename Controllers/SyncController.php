@@ -40,27 +40,30 @@ class SyncController extends \CLx\Core\Controller {
 			if(!file_exists($this->sync_config['locate'] . $username))
 				@mkdir($this->sync_config['locate'] . $username, 0755, TRUE);
 			
-			$sync_path = $this->sync_config['locate'] . $username . DIRECTORY_SEPARATOR . $token;
+			$sync_path = $this->sync_config['locate'] . $username . '/' . $token;
 			
 			$start_time = time();
 			set_time_limit($this->sync_config['timeout']+5);
 			
-			if(file_exists($sync_path))
-				unlink($sync_path);
+			// if(file_exists($sync_path))
+				// unlink($sync_path);
 			
 			$loop = TRUE;
 			while($loop) {
-				if(PHP_OS == 'Linux')
-					usleep(1000);
-				else
-					sleep(1);
+				// Sleep and wait 1 second
+				sleep(1);
 				
 				if(file_exists($sync_path)) {
+					// Wait Event Write-in file
+					sleep(2);
+					
 					$result = NULL;
 					$handle = fopen($sync_path, 'r');
 					while($data = fread($handle, 1024))
 						$result .= $data;
 					fclose($handle);
+					
+					$result = sprintf("[%s]", trim($result, ','));
 					
 					if(file_exists($sync_path))
 						unlink($sync_path);
@@ -75,7 +78,8 @@ class SyncController extends \CLx\Core\Controller {
 				}
 			}
 		}
-		else
+		
+		if(StatusCode::isError())
 			\CLx\Core\Response::toJSON(array('status' => StatusCode::getStatus()));
 	}
 }

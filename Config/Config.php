@@ -23,6 +23,6 @@ $Config['file'] = array(
 );
 
 $Config['sync'] = array(
-	'timeout' => 180,
+	'timeout' => 5,
 	'locate' => TEMP_DIR . 'RNFileSystem.Sync/'
 );
