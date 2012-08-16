@@ -36,9 +36,10 @@ $Event['file_change'] = array(
 		
 		foreach((array)$result as $row)
 			if($row['token'] != $callback['token']) {
-				$sockpath = $sync_config['locate'] . $callback['user'] . DIRECTORY_SEPARATOR . $row['token'];
-				$fp = fopen($sockpath, 'w+');
-				fwrite($fp, json_encode($callback['send']));
+				$sockpath = $sync_config['locate'] . $callback['user'] . '/' . $row['token'];
+				// $fp = fopen($sockpath, 'w+');
+				$fp = fopen($sockpath, 'a');
+				fwrite($fp, json_encode($callback['send']) . ',');
 				fclose($fp);
 			}
 	}

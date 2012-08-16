@@ -12,6 +12,9 @@ server {
 	}
 
 	location ~ ^/index\.php {
+		fastcgi_connect_timeout 300;
+		fastcgi_send_timeout 300;
+		fastcgi_read_timeout 300;
 		fastcgi_split_path_info ^(.+\.php)(/.+)$;
 		fastcgi_pass unix:/tmp/php-fpm.sock;
 		fastcgi_index index.php;
