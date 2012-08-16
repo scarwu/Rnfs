@@ -27,8 +27,8 @@ $Event['file_change'] = array(
 		else
 			throw new Exception('Config/Database.php is not exists.');
 
-		if(!file_exists($sync_config['locate'] . $callback['user']))
-			@mkdir($sync_config['locate'] . $callback['user'], 0755, TRUE);
+		if(!file_exists($sync_config['locate'] . $callback['user'] . '/sync'))
+			@mkdir($sync_config['locate'] . $callback['user'] . '/sync', 0755, TRUE);
 		
 		$sql = 'SELECT * FROM `tokenlist` WHERE `username`=:un';
 		$params = array(':un' => $callback['user']);
@@ -36,11 +36,17 @@ $Event['file_change'] = array(
 		
 		foreach((array)$result as $row)
 			if($row['token'] != $callback['token']) {
-				$sockpath = $sync_config['locate'] . $callback['user'] . '/' . $row['token'];
-				// $fp = fopen($sockpath, 'w+');
-				$fp = fopen($sockpath, 'a');
-				fwrite($fp, json_encode($callback['send']) . ',');
-				fclose($fp);
+				$sock_path = $sync_config['locate'] . $callback['user'] . '/sync/' . $row['token'];
+				// $fp = fopen($sock_path, 'w+');
+				$handle = fopen($sock_path, 'a');
+				while(1) {
+					if(flock($handle, LOCK_EX))
+						fwrite($handle, json_encode($callback['send']) . ',');
+						fflush($handle);
+						break;
+					}
+				flock($handle, LOCK_UN);
+				fclose($handle);
 			}
 	}
 );
