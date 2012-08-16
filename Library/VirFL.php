@@ -44,16 +44,22 @@ class VirFL {
 			self::$_revert = $revert;
 		
 		// Make root folder
-		if(!file_exists(self::$_root))
-			mkdir(self::$_root, 0755, TRUE);
+		if(!file_exists(self::$_root . '/data'))
+			mkdir(self::$_root . '/data', 0755, TRUE);
 		
 		// Load files record list
 		if(file_exists(self::$_root . '/record.json')) {
 			$handle = fopen(self::$_root . '/record.json', 'r');
-			$json = NULL;
-			while($data = fread($handle, 1024))
-				$json .= $data;
-			self::$_record = json_decode($json, TRUE);
+			while(1)
+				if(flock($handle, LOCK_EX)) {
+					$json = NULL;
+					while($data = fread($handle, 1024))
+						$json .= $data;
+					self::$_record = json_decode($json, TRUE);
+					fflush($handle);
+					break;
+				}
+			flock($handle, LOCK_UN);
 			fclose($handle);
 		}
 		else {
@@ -68,7 +74,13 @@ class VirFL {
 	private static function save() {
 		ksort(self::$_record);
 		$handle = fopen(self::$_root . '/record.json', 'w+');
-		fwrite($handle, json_encode(self::$_record));
+		while(1)
+			if(flock($handle, LOCK_EX)) {
+				fwrite($handle, json_encode(self::$_record));
+				fflush($handle);
+				break;
+			}
+		flock($handle, LOCK_UN);
 		fclose($handle);
 	} 
 	
@@ -112,7 +124,7 @@ class VirFL {
 			$hash = array_shift(self::$_record[$path]['hash']);
 			
 			// if unlink error return false and save record
-			if(!unlink(self::$_root . '/' . $hash)) {
+			if(!unlink(self::$_root . '/data/' . $hash)) {
 				self::save();
 				return FALSE;
 			}
@@ -179,10 +191,10 @@ class VirFL {
 			do {
 				$hash = hash('md5', rand());
 			}
-			while(file_exists(self::$_root . '/' . $hash));
+			while(file_exists(self::$_root . '/data/' . $hash));
 			
 			// Copy Real File to VirFL
-			if(!copy($real_path, self::$_root . '/' . $hash))
+			if(!copy($real_path, self::$_root . '/data/' . $hash))
 				return FALSE;
 			
 			// Add new record
@@ -253,10 +265,10 @@ class VirFL {
 		do {
 			$hash = hash('md5', rand());
 		}
-		while(file_exists(self::$_root . '/' . $hash));
+		while(file_exists(self::$_root . '/data/' . $hash));
 		
 		// Copy Real File to VirFL
-		if(!copy($real_path, self::$_root . '/' . $hash))
+		if(!copy($real_path, self::$_root . '/data/' . $hash))
 			return FALSE;
 		
 		// Add new record
@@ -285,16 +297,16 @@ class VirFL {
 		// Normal download
 		if(NULL === $seek) {
 			// ob_end_flush();
-			header('Content-Type: ' . mime_content_type(self::$_root . '/' . self::$_record[$path]['hash'][$version]));
-			readfile(self::$_root . '/' . self::$_record[$path]['hash'][$version]);
+			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . self::$_record[$path]['hash'][$version]));
+			readfile(self::$_root . '/data/' . self::$_record[$path]['hash'][$version]);
 			return TRUE;
 		}
 		
 		// Resume download
-		if(is_int($seek) && $seek <= filesize(self::$_root . '/' . self::$_record[$path]['hash'][$version])) {
+		if(is_int($seek) && $seek <= filesize(self::$_root . '/data/' . self::$_record[$path]['hash'][$version])) {
 			// ob_end_flush();
-			header('Content-Type: ' . mime_content_type(self::$_root . '/' . self::$_record[$path]['hash'][$version]));
-			$handle = fopen(self::$_root . '/' . self::$_record[$path]['hash'][$version], 'rb');
+			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . self::$_record[$path]['hash'][$version]));
+			$handle = fopen(self::$_root . '/data/' . self::$_record[$path]['hash'][$version], 'rb');
 			fseek($handle, $seek);
 			fpassthru($handle);
 			return TRUE;
@@ -348,7 +360,7 @@ class VirFL {
 	private static function removeAllFileVersion($path) {
 		// Delete All File version
 		foreach(self::$_record[$path]['hash'] as $version)
-			if(!unlink(self::$_root . '/' . $version))
+			if(!unlink(self::$_root . '/data/' . $version))
 				return FALSE;
 			
 		// Delete record
@@ -425,7 +437,7 @@ class VirFL {
 		// Calculate used capacity
 		foreach(self::$_record as $data) {
 			if(isset($data['hash']))
-				$capacity += filesize(self::$_root . '/' . $data['hash'][0]);
+				$capacity += filesize(self::$_root . '/data/' . $data['hash'][0]);
 		}
 		
 		return $capacity;

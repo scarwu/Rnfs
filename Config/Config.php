@@ -15,7 +15,7 @@ $Config['auth'] = array(
 );
 
 $Config['file'] = array(
-	'locate' => TEMP_DIR . 'RNFileSystem.Data/',
+	'locate' => TEMP_DIR . 'RNFileSystem.Server/',
 	'encode' => PHP_OS == 'Linux' ? 'UTF-8' : 'BIG5',
 	'upload_limit' => 256 * 1024 * 1024,
 	'capacity' => 1024 * 1024 * 1024,
@@ -24,5 +24,5 @@ $Config['file'] = array(
 
 $Config['sync'] = array(
 	'timeout' => 180,
-	'locate' => TEMP_DIR . 'RNFileSystem.Sync/'
+	'locate' => TEMP_DIR . 'RNFileSystem.Server/'
 );

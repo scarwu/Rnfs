@@ -37,10 +37,10 @@ class SyncController extends \CLx\Core\Controller {
 			// Database Disconnect
 			\CLx\Library\Database::disconnect();
 			
-			if(!file_exists($this->sync_config['locate'] . $username))
-				@mkdir($this->sync_config['locate'] . $username, 0755, TRUE);
+			if(!file_exists($this->sync_config['locate'] . $username . '/sync'))
+				@mkdir($this->sync_config['locate'] . $username . '/sync', 0755, TRUE);
 			
-			$sync_path = $this->sync_config['locate'] . $username . '/' . $token;
+			$sync_path = $this->sync_config['locate'] . $username . '/sync/' . $token;
 			
 			$start_time = time();
 			set_time_limit($this->sync_config['timeout']+5);
@@ -55,12 +55,18 @@ class SyncController extends \CLx\Core\Controller {
 				
 				if(file_exists($sync_path)) {
 					// Wait Event Write-in file
-					sleep(2);
+					// sleep(2);
 					
-					$result = NULL;
 					$handle = fopen($sync_path, 'r');
-					while($data = fread($handle, 1024))
-						$result .= $data;
+					while(1)
+						if(flock($handle, LOCK_EX)) {
+							$result = NULL;
+							while($data = fread($handle, 1024))
+								$result .= $data;
+							fflush($handle);
+							break;
+						}
+					flock($handle, LOCK_UN);
 					fclose($handle);
 					
 					$result = sprintf("[%s]", trim($result, ','));
