@@ -18,11 +18,11 @@ $Config['file'] = array(
 	'locate' => TEMP_DIR . 'RNFileSystem.Data/',
 	'encode' => PHP_OS == 'Linux' ? 'UTF-8' : 'BIG5',
 	'upload_limit' => 256 * 1024 * 1024,
-	'capacity' => 512 * 1024 * 1024,
+	'capacity' => 1024 * 1024 * 1024,
 	'revert' => 1
 );
 
 $Config['sync'] = array(
-	'timeout' => 5,
+	'timeout' => 180,
 	'locate' => TEMP_DIR . 'RNFileSystem.Sync/'
 );
