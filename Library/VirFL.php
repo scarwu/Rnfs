@@ -19,7 +19,7 @@ class VirFL {
 	/**
 	 * @var array
 	 */
-	private static $_record = array();
+	private static $_record;
 	
 	/**
 	 * @var int
@@ -48,61 +48,92 @@ class VirFL {
 			mkdir(self::$_root . '/data', 0755, TRUE);
 		
 		// Load files record list
-		if(file_exists(self::$_root . '/record.json')) {
-			$handle = fopen(self::$_root . '/record.json', 'r');
-			while(1)
-				if(flock($handle, LOCK_EX)) {
-					$json = NULL;
-					while($data = fread($handle, 1024))
-						$json .= $data;
-					self::$_record = json_decode($json, TRUE);
-					fflush($handle);
-					break;
-				}
-			flock($handle, LOCK_UN);
-			fclose($handle);
+		if(!file_exists(self::$_root . '/record.db3')) {
+			self::$_record = new PDO('sqlite:' . self::$_root . '/record.db3');
+			self::$_record->query(
+				'CREATE TABLE files (' .
+					'path TEXT NOT NULL,' .
+					'type TEXT NOT NULL,' .
+					'size INTEGER,' .
+					'hash TEXT,' .
+					'version INTEGER,' .
+					'revision TEXT,' .
+					'PRIMARY KEY(path ASC)' .
+				')'
+			);
+			
+			# Insert Default Data
+			self::$_record->query('INSERT INTO files (path, type) VALUES ("/", "dir")');
 		}
-		else {
-			self::$_record['/']['type'] = 'dir';
-			self::save();
-		}
+		else
+			self::$_record = new PDO('sqlite:' . self::$_root . '/record.db3');
+		
+		// Extend SQLite RegExp Function
+		self::$_record->sqliteCreateFunction('REGEXP', function($pattern, $subject) {
+			return preg_match("/{$pattern}/", $subject);
+		}, 2);
 	}
-	
-	/**
-	 * Record Write-back
-	 */
-	private static function save() {
-		ksort(self::$_record);
-		$handle = fopen(self::$_root . '/record.json', 'w+');
-		while(1)
-			if(flock($handle, LOCK_EX)) {
-				fwrite($handle, json_encode(self::$_record));
-				fflush($handle);
-				break;
-			}
-		flock($handle, LOCK_UN);
-		fclose($handle);
-	} 
+	 
 	
 	/**
 	 * Index Files
 	 */
 	public static function index($path = '/') {
-		if('/' === $path)
-			return self::$_record;
+		if('/' === $path) {
+			$list = array();
+			$sth = self::$_record->query('SELECT * FROM files');
+			while($row = $sth->fetch()) {
+				if('file' == $row['type']) {
+					$list[$row['path']] = array(
+						'type' => 'file',
+						'size' => $row['size'],
+						'hash' => $row['hash'],
+						'version' => $row['version']
+					);
+				}
+				else
+					$list[$row['path']] = array('type' => 'dir');
+			}
+		}
 		else {
+			if(!self::isExists($path))
+				return NULL;
+			
 			$list = NULL;
 			
-			if(isset(self::$_record[$path]))
-				$list[$path] = self::$_record[$path];
+			$sth = self::$_record->prepare('SELECT * FROM files WHERE path=:path');
+			$sth->execute(array(':path' => $path));
+			$result = $sth->fetch();
 			
-			$regex_path = sprintf('/^\/%s\//', str_replace('/', '\/', trim($path, '/')));
-			foreach(self::$_record as $key => $value)
-				if(preg_match($regex_path, $key))
-					$list[$key] = $value;
-				
-			return $list;
+			if('file' == $result['type'])
+				return $list[$row['path']] = array(
+					'type' => 'file',
+					'size' => $row['size'],
+					'hash' => $row['hash'],
+					'version' => $row['version']
+				);
+			else
+				$list[$row['path']] = array('type' => 'dir');
+			
+			$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
+			$sql = sprintf('SELECT * FROM files WHERE path REGEXP "%s"', $regex_path);
+			$sth = $SQLite->prepare($sql);
+			$sth->execute();
+			
+			while($row = $sth->fetch()) {
+				if('file' == $result['type'])
+					$list[$row['path']] = array(
+						'type' => 'file',
+						'size' => $row['size'],
+						'hash' => $row['hash'],
+						'version' => $row['version']
+					);
+				else
+					$list[$row['path']] = array('type' => 'dir');
+			}
 		}
+
+		return $list;
 	}
 	
 	/**
@@ -110,30 +141,30 @@ class VirFL {
 	 * 
 	 * @param string
 	 */
-	public static function revert($path, $version) {
-		// Check file is exists
-		if(!isset(self::$_record[$path]))
-			return FALSE;
-		
-		// Check File version is exists
-		if(self::$_record[$path]['hash'][$version])
-			return FALSE;
-		
-		// Delete new version
-		for($i = 0;$i < $version;++$i) {
-			$hash = array_shift(self::$_record[$path]['hash']);
-			
-			// if unlink error return false and save record
-			if(!unlink(self::$_root . '/data/' . $hash)) {
-				self::save();
-				return FALSE;
-			}
-		}
-		
-		// Record Write-back
-		self::save();
-		return TRUE;
-	}
+	// public static function revert($path, $version) {
+		// // Check file is exists
+		// if(!isset(self::$_record[$path]))
+			// return FALSE;
+// 		
+		// // Check File version is exists
+		// if(self::$_record[$path]['hash'][$version])
+			// return FALSE;
+// 		
+		// // Delete new version
+		// for($i = 0;$i < $version;++$i) {
+			// $hash = array_shift(self::$_record[$path]['hash']);
+// 			
+			// // if unlink error return false and save record
+			// if(!unlink(self::$_root . '/data/' . $hash)) {
+				// self::save();
+				// return FALSE;
+			// }
+		// }
+// 		
+		// // Record Write-back
+		// self::save();
+		// return TRUE;
+	// }
 	
 	/**
 	 * Move File
@@ -141,36 +172,36 @@ class VirFL {
 	 * @param string
 	 * @param string
 	 */
-	public static function move($sim_src, $sim_dest) {
-		// Check Sim Source and Sim Destination
-		if(!isset(self::$_record[$sim_src]) || isset(self::$_record[$sim_dest]))
-			return FALSE;
-		
-		// Create full directory path
-		self::createFullDirPath($sim_dest, self::type($sim_src));
-		
-		// Change old path to new path
-		self::$_record[$sim_dest] = self::$_record[$sim_src];
-		
-		// Unset old path
-		unset(self::$_record[$sim_src]);
-		
-		// Change sub directory to new path
-		$regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
-		
-		foreach(self::$_record as $path => $data) {
-			if(preg_match($regex_path, $path, $match)) {
-				self::$_record[$sim_dest . '/' . $match[1]] = $data;
-				
-				// Unset old path
-				unset(self::$_record[$path]);
-			}
-		}
-		
-		// Record Write-back
-		self::save();
-		return TRUE;
-	}
+	// public static function move($sim_src, $sim_dest) {
+		// // Check Sim Source and Sim Destination
+		// if(!isset(self::$_record[$sim_src]) || isset(self::$_record[$sim_dest]))
+			// return FALSE;
+// 		
+		// // Create full directory path
+		// self::createFullDirPath($sim_dest, self::type($sim_src));
+// 		
+		// // Change old path to new path
+		// self::$_record[$sim_dest] = self::$_record[$sim_src];
+// 		
+		// // Unset old path
+		// unset(self::$_record[$sim_src]);
+// 		
+		// // Change sub directory to new path
+		// $regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
+// 		
+		// foreach(self::$_record as $path => $data) {
+			// if(preg_match($regex_path, $path, $match)) {
+				// self::$_record[$sim_dest . '/' . $match[1]] = $data;
+// 				
+				// // Unset old path
+				// unset(self::$_record[$path]);
+			// }
+		// }
+// 		
+		// // Record Write-back
+		// self::save();
+		// return TRUE;
+	// }
 	
 	/**
 	 * Create File or Create Directory
@@ -198,10 +229,15 @@ class VirFL {
 				return FALSE;
 			
 			// Add new record
-			self::$_record[$sim_path] = array(
-				'type' => 'file',
-				'hash' => array($hash)
-			);
+			$sth = self::$_record->prepare('INSERT INTO files (path, type, size, hash, version, revision) VALUES (:path, :type, :size, :hash, :version, :revision)');
+			$sth->execute(array(
+				':path' => $sim_path,
+				':type' => 'file',
+				':size' => filesize(self::$_root . '/data/' . $hash),
+				':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
+				':version' => 0,
+				':revision' => json_encode(array($hash))
+			));
 		}
 		else {
 			// Check Sim Path
@@ -211,9 +247,7 @@ class VirFL {
 			// Create full directory path
 			self::createFullDirPath($sim_path, 'dir');
 		}
-		
-		// Record Write-back
-		self::save();
+
 		return TRUE;
 	}
 	
@@ -228,18 +262,28 @@ class VirFL {
 
 		// If type is file then pop filename
 		if('file' == $type)
-			unset($segments[count($segments)-1]);
+			array_pop($segments);
 		
 		// Create
 		$full_path = '';
 		foreach($segments as $segment) {
 			$full_path .= '/' . $segment;
-			if(!isset(self::$_record[$full_path]))
+			if(!self::isExists($path)) {
 				// Add new record
-				self::$_record[$full_path]['type'] = 'dir';
-			elseif('file' != self::$_record[$full_path]['type'])
+				$sth = self::$_record->prepare('INSERT INTO files (path, type) VALUES (:path, :type)');
+				$sth->execute(array(
+					':path' => $full_path,
+					':type' => 'dir'
+				));
+			}
+			elseif('file' != self::type($path)) {
 				// Add new record
-				self::$_record[$full_path]['type'] = 'dir';
+				$sth = self::$_record->prepare('INSERT INTO files (path, type) VALUES (:path, :type)');
+				$sth->execute(array(
+					':path' => $full_path,
+					':type' => 'dir'
+				));
+			}
 			else
 				return FALSE;
 		}
@@ -253,31 +297,31 @@ class VirFL {
 	 * @param string
 	 * @param string
 	 */
-	public static function update($sim_path, $real_path) {
-		// Check Real Source and Sim Destination
-		if(!file_exists($real_path) || !isset(self::$_record[$sim_path]))
-			return FALSE;
-
-		// Create full directory path
-		self::createFullDirPath($sim_path, 'file');
-
-		// Generate Unique-Hash for File
-		do {
-			$hash = hash('md5', rand());
-		}
-		while(file_exists(self::$_root . '/data/' . $hash));
-		
-		// Copy Real File to VirFL
-		if(!copy($real_path, self::$_root . '/data/' . $hash))
-			return FALSE;
-		
-		// Add new record
-		array_unshift(self::$_record[$sim_path]['hash'], $hash);
-		
-		// Record Write-back
-		self::save();
-		return TRUE;
-	}
+	// public static function update($sim_path, $real_path) {
+		// // Check Real Source and Sim Destination
+		// if(!file_exists($real_path) || !isset(self::$_record[$sim_path]))
+			// return FALSE;
+// 
+		// // Create full directory path
+		// self::createFullDirPath($sim_path, 'file');
+// 
+		// // Generate Unique-Hash for File
+		// do {
+			// $hash = hash('md5', rand());
+		// }
+		// while(file_exists(self::$_root . '/data/' . $hash));
+// 		
+		// // Copy Real File to VirFL
+		// if(!copy($real_path, self::$_root . '/data/' . $hash))
+			// return FALSE;
+// 		
+		// // Add new record
+		// array_unshift(self::$_record[$sim_path]['hash'], $hash);
+// 		
+		// // Record Write-back
+		// self::save();
+		// return TRUE;
+	// }
 	
 	/**
 	 * Read File
@@ -287,26 +331,32 @@ class VirFL {
 	 */
 	public static function read($path, $seek = NULL, $version = 0) {
 		// Check path exists
-		if(!isset(self::$_record[$path]))
+		if(!self::isExists($path))
 			return FALSE;
 		
+		$sth = self::$_record->prepare('SELECT * FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $path));
+		$result = $sth->fetch();
+		
 		// Check file version exists
-		if(!isset(self::$_record[$path]['hash'][$version]))
+		if($result['version'] < $version && $version < 0)
 			return FALSE;
+		
+		$result['revision'] = json_decode($result['revision'], TRUE);
 		
 		// Normal download
 		if(NULL === $seek) {
 			// ob_end_flush();
-			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . self::$_record[$path]['hash'][$version]));
-			readfile(self::$_root . '/data/' . self::$_record[$path]['hash'][$version]);
+			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . $result['revision'][$version]));
+			readfile(self::$_root . '/data/' . $result['revision'][$version]);
 			return TRUE;
 		}
 		
 		// Resume download
-		if(is_int($seek) && $seek <= filesize(self::$_root . '/data/' . self::$_record[$path]['hash'][$version])) {
+		if(is_int($seek) && $seek <= filesize(self::$_root . '/data/' . $result['hash'][$version])) {
 			// ob_end_flush();
-			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . self::$_record[$path]['hash'][$version]));
-			$handle = fopen(self::$_root . '/data/' . self::$_record[$path]['hash'][$version], 'rb');
+			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . $result['revision'][$version]));
+			$handle = fopen(self::$_root . '/data/' . $result['revision'][$version], 'rb');
 			fseek($handle, $seek);
 			fpassthru($handle);
 			return TRUE;
@@ -322,49 +372,53 @@ class VirFL {
 	 */
 	public static function delete($path) {
 		// Check Path is exists
-		if(!isset(self::$_record[$path]))
+		if(!self::isExists($path))
 			return FALSE;
 		
-		if('file' == self::$_record[$path]['type']) {
-			self::removeAllFileVersion($path);
+		if('file' == self::type($path)) {
+			// Load file information
+			$sth = self::$_record->prepare('SELECT revision FROM files WHERE path=:path');
+			$sth->execute(array(':path' => $path));
+			$result = $sth->fetch();
+			
+			// Delete all file version
+			$result['revision'] = json_decode($result['revision'], TRUE);
+			foreach((array)$result['revision'] as $hash)
+				unlink(self::$_root . '/data/' . $hash);
+			
+			// Delete file record
+			$sth = self::$_record->prepare('DELETE FROM files WHERE path=:path');
+			$sth->execute(array(':path' => $path));
 		}
 		else {
 			if('/' !== $path) {
-				unset(self::$_record[$path]);
-				$regex_path = sprintf('/^\/%s\//', str_replace('/', '\/', trim($path, '/')));
+				// Delete directory record
+				$sth = $SQLite->prepare('DELETE FROM files WHERE path=:path');
+				$sth->execute(array(':path' => $path));
+				
+				$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
 			}
 			else
-				$regex_path = '/^\/.+/';
+				$regex_path = '^\/.+';
 			
-			foreach(self::$_record as $path => $data) {
-				if(preg_match($regex_path, $path)) {
-					if('file' == self::$_record[$path]['type'])
-						self::removeAllFileVersion($path);
-					else
-						unset(self::$_record[$path]);
-				}
+			// Load all files record
+			$sth = self::$_record->prepare('SELECT hash FROM files WHERE path=:path, type="file"');
+			$sth->execute(array(':path' => $path));
+			
+			// Delete all file version
+			while($row = $sth->fetch()) {
+				$result['revision'] = json_decode($result['revision'], TRUE);
+				foreach($result['revision'] as $hash)
+					unlink(self::$_root . '/data/' . $hash);
 			}
+			
+			// Delete all file record
+			$sql = sprintf('DELETE FROM files WHERE path REGEXP "%s"', $regex_path);
+			$sth = $SQLite->prepare($sql);
+			$sth->execute();
 		}
 		
-		// Record Write-back
-		self::save();
 		return TRUE;
-	}
-	
-	/**
-	 * Remove All File Version
-	 * 
-	 * @param string
-	 */
-	//FIXME
-	private static function removeAllFileVersion($path) {
-		// Delete All File version
-		foreach(self::$_record[$path]['hash'] as $version)
-			if(!unlink(self::$_root . '/data/' . $version))
-				return FALSE;
-			
-		// Delete record
-		unset(self::$_record[$path]);
 	}
 	
 	/**
@@ -373,11 +427,11 @@ class VirFL {
 	 * @param string
 	 */
 	public static function type($path) {
-		// Check Path is exists
-		if(!isset(self::$_record[$path]))
-			return FALSE;
+		$sth = self::$_record->prepare('SELECT type FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $path));
+		$result = $sth->fetch();
 		
-		return self::$_record[$path]['type'];
+		return isset($result['type']) ? $result['type'] : NULL;
 	}
 	
 	/**
@@ -386,11 +440,10 @@ class VirFL {
 	 * @param string
 	 */
 	public static function isDir($path) {
-		// Check Path is exists
-		if(!isset(self::$_record[$path]))
-			return FALSE;
+		$sth = self::$_record->prepare('SELECT type FROM files WHERE path=:path AND type="dir"');
+		$sth->execute(array(':path' => $path));
 		
-		return 'dir' === self::$_record[$path]['type'];
+		return $sth->fetch() != NULL;
 	}
 	
 	/**
@@ -399,11 +452,10 @@ class VirFL {
 	 * @param string
 	 */
 	public static function isFile($path) {
-		// Check Path is exists
-		if(!isset(self::$_record[$path]))
-			return FALSE;
+		$sth = self::$_record->prepare('SELECT type FROM files WHERE path=:path AND type="file"');
+		$sth->execute(array(':path' => $path));
 		
-		return 'file' === self::$_record[$path]['type'];
+		return $sth->fetch() != NULL;
 	}
 	
 	/**
@@ -412,7 +464,11 @@ class VirFL {
 	 * @param string
 	 */
 	public static function isExists($path) {
-		return isset(self::$_record[$path]);
+		$sth = self::$_record->prepare('SELECT COUNT(path) FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $path));
+		$result = $sth->fetch();
+		
+		return $result[0] != 0;
 	}
 	
 	/**
@@ -432,14 +488,9 @@ class VirFL {
 	 * @param string
 	 */
 	public static function getUsed() {
-		$capacity = 0;
-
-		// Calculate used capacity
-		foreach(self::$_record as $data) {
-			if(isset($data['hash']))
-				$capacity += filesize(self::$_root . '/data/' . $data['hash'][0]);
-		}
+		$sth = self::$_record->query('SELECT SUM(size) FROM files WHERE type="file"');
+		$result = $sth->fetch();
 		
-		return $capacity;
+		return $result[0];
 	}
 }
