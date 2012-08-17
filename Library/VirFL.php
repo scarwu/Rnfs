@@ -525,6 +525,6 @@ class VirFL {
 		$sth = self::$_record->query('SELECT size FROM files WHERE type="file"');
 		$result = $sth->fetch();
 
-		return isset($result[0]) ? $result[0] : 0;
+		return isset($result[0]) ? (int)$result[0] : 0;
 	}
 }
