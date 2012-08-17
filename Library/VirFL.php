@@ -141,30 +141,41 @@ class VirFL {
 	 * 
 	 * @param string
 	 */
-	// public static function revert($path, $version) {
-		// // Check file is exists
-		// if(!isset(self::$_record[$path]))
-			// return FALSE;
-// 		
-		// // Check File version is exists
-		// if(self::$_record[$path]['hash'][$version])
-			// return FALSE;
-// 		
-		// // Delete new version
-		// for($i = 0;$i < $version;++$i) {
-			// $hash = array_shift(self::$_record[$path]['hash']);
-// 			
-			// // if unlink error return false and save record
-			// if(!unlink(self::$_root . '/data/' . $hash)) {
-				// self::save();
-				// return FALSE;
-			// }
-		// }
-// 		
-		// // Record Write-back
-		// self::save();
-		// return TRUE;
-	// }
+	// FIXME need test
+	public static function revert($path, $version = NULL) {
+		// Check file is exists
+		if(!self::isExists($path))
+			return FALSE;
+		
+		if(NULL == $version)
+			return FALSE;
+		
+		// Check File version is exists
+		$sth = self::$_record->prepare('SELECT * FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $path));
+		$result = $sth->fetch();
+		
+		// Check file version exists
+		if($result['version'] < $version && $version < 0)
+			return FALSE;
+		
+		$result['revision'] = json_decode($result['revision'], TRUE);
+		
+		// Delete new version
+		for($i = count($result['revision'])-1;$i > $version;--$i) {
+			$hash = array_pop($result['revision']);
+			unlink(self::$_root . '/data/' . $hash);
+		}
+		
+		$sth = self::$_record->prepare('UPDATE files SET version=:version, revision=:revision WHERE path=:path');
+		$sth->execute(array(
+			':path' => $path,
+			':version' => $version,
+			':revision' => json_encode($result['revision'])
+		));
+
+		return TRUE;
+	}
 	
 	/**
 	 * Move File
@@ -172,36 +183,45 @@ class VirFL {
 	 * @param string
 	 * @param string
 	 */
-	// public static function move($sim_src, $sim_dest) {
-		// // Check Sim Source and Sim Destination
-		// if(!isset(self::$_record[$sim_src]) || isset(self::$_record[$sim_dest]))
-			// return FALSE;
-// 		
-		// // Create full directory path
-		// self::createFullDirPath($sim_dest, self::type($sim_src));
-// 		
-		// // Change old path to new path
-		// self::$_record[$sim_dest] = self::$_record[$sim_src];
-// 		
-		// // Unset old path
-		// unset(self::$_record[$sim_src]);
-// 		
-		// // Change sub directory to new path
-		// $regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
-// 		
-		// foreach(self::$_record as $path => $data) {
-			// if(preg_match($regex_path, $path, $match)) {
-				// self::$_record[$sim_dest . '/' . $match[1]] = $data;
-// 				
-				// // Unset old path
-				// unset(self::$_record[$path]);
-			// }
-		// }
-// 		
-		// // Record Write-back
-		// self::save();
-		// return TRUE;
-	// }
+	// FIXME need test
+	public static function move($sim_src, $sim_dest) {
+		// Check Sim Source and Sim Destination
+		if(!self::isExists($sim_src) || self::isExists($sim_dest))
+			return FALSE;
+		
+		// Create full directory path
+		self::createFullDirPath($sim_dest, self::type($sim_src));
+
+		// Change old path to new path
+		$sth = self::$_record->prepare('UPDATE files SET path=:new_path WHERE path=:path');
+		$sth->execute(array(
+			':path' => $sim_src,
+			':new_path' => $sim_dest
+		));
+		
+		//FIXME Bug
+		if('dir' == self::type($sim_dest)) {
+			// Load file path
+			$regex_path_sql = sprintf('^\/%s\/', str_replace('/', '\/', trim($sim_src, '/')));
+			$sql = sprintf('SELECT path FROM files WHERE path REGEXP "%s"', $regex_path_sql);
+			$sth = self::$_record->prepare($sql);
+			$sth->execute();
+			
+			// Change sub directory to new path
+			$regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
+			while($row = $sth->fetch()) {
+				if(preg_match($regex_path, $row['path'], $match)) {
+					$sth = self::$_record->prepare('UPDATE files SET path=:new_path WHERE path=:path');
+					$sth->execute(array(
+						':path' => $row['path'],
+						':new_path' => $sim_dest . '/' . $match[1]
+					));
+				}
+			}
+		}
+		
+		return TRUE;
+	}
 	
 	/**
 	 * Create File or Create Directory
@@ -297,31 +317,42 @@ class VirFL {
 	 * @param string
 	 * @param string
 	 */
-	// public static function update($sim_path, $real_path) {
-		// // Check Real Source and Sim Destination
-		// if(!file_exists($real_path) || !isset(self::$_record[$sim_path]))
-			// return FALSE;
-// 
-		// // Create full directory path
-		// self::createFullDirPath($sim_path, 'file');
-// 
-		// // Generate Unique-Hash for File
-		// do {
-			// $hash = hash('md5', rand());
-		// }
-		// while(file_exists(self::$_root . '/data/' . $hash));
-// 		
-		// // Copy Real File to VirFL
-		// if(!copy($real_path, self::$_root . '/data/' . $hash))
-			// return FALSE;
-// 		
-		// // Add new record
-		// array_unshift(self::$_record[$sim_path]['hash'], $hash);
-// 		
-		// // Record Write-back
-		// self::save();
-		// return TRUE;
-	// }
+	// FIXME need test
+	public static function update($sim_path, $real_path) {
+		// Check Real Source and Sim Destination
+		if(!file_exists($real_path) || !self::isExists($sim_path))
+			return FALSE;
+
+		// Generate Unique-Hash for File
+		do {
+			$hash = hash('md5', rand());
+		}
+		while(file_exists(self::$_root . '/data/' . $hash));
+		
+		// Copy Real File to VirFL
+		if(!copy($real_path, self::$_root . '/data/' . $hash))
+			return FALSE;
+		
+		self::$_record->prepare('SELECT hash,version,revision FROM files WHERE path=:path');
+		$sth = self::execute(array(
+			':path' => $sim_path
+		));
+		$result = $sth->fetch();
+		
+		// Add new record
+		$result['revision'] = json_decode($result['revision'], TRUE);
+		array_unshift($result['revision'], $hash);
+		
+		self::$_record->prepare('UPDATE files SET hash=:hash, version=:versoin, revision=:revision WHERE path=:path');
+		$sth = self::execute(array(
+			':path' => $sim_path,
+			':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
+			':version' => $result['version']+1,
+			':revision' => json_encode($result['revision'])
+		));
+		
+		return TRUE;
+	}
 	
 	/**
 	 * Read File
@@ -329,7 +360,7 @@ class VirFL {
 	 * @param string
 	 * @param boolean
 	 */
-	public static function read($path, $seek = NULL, $version = 0) {
+	public static function read($path, $seek = NULL, $version = NULL) {
 		// Check path exists
 		if(!self::isExists($path))
 			return FALSE;
@@ -337,6 +368,9 @@ class VirFL {
 		$sth = self::$_record->prepare('SELECT * FROM files WHERE path=:path');
 		$sth->execute(array(':path' => $path));
 		$result = $sth->fetch();
+		
+		if(NULL == $version)
+			$version = count($result['version'])-1;
 		
 		// Check file version exists
 		if($result['version'] < $version && $version < 0)
