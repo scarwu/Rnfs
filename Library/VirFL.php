@@ -427,7 +427,7 @@ class VirFL {
 		else {
 			if('/' !== $path) {
 				// Delete directory record
-				$sth = $SQLite->prepare('DELETE FROM files WHERE path=:path');
+				$sth = self::$_record->prepare('DELETE FROM files WHERE path=:path');
 				$sth->execute(array(':path' => $path));
 				
 				$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
@@ -448,7 +448,7 @@ class VirFL {
 			
 			// Delete all file record
 			$sql = sprintf('DELETE FROM files WHERE path REGEXP "%s"', $regex_path);
-			$sth = $SQLite->prepare($sql);
+			$sth = self::$_record->prepare($sql);
 			$sth->execute();
 		}
 		
