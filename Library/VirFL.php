@@ -57,8 +57,7 @@ class VirFL {
 					'size INTEGER,' .
 					'hash TEXT,' .
 					'version INTEGER,' .
-					'revision TEXT,' .
-					'PRIMARY KEY(path ASC)' .
+					'revision TEXT' .
 				')'
 			);
 			
@@ -199,7 +198,6 @@ class VirFL {
 			':new_path' => $sim_dest
 		));
 		
-		//FIXME Bug
 		if('dir' == self::type($sim_dest)) {
 			// Load file path
 			$regex_path_sql = sprintf('^\/%s\/', str_replace('/', '\/', trim($sim_src, '/')));
