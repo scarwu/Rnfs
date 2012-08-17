@@ -522,9 +522,9 @@ class VirFL {
 	 * @param string
 	 */
 	public static function getUsed() {
-		$sth = self::$_record->query('SELECT SUM(size) FROM files WHERE type="file"');
+		$sth = self::$_record->query('SELECT size FROM files WHERE type="file"');
 		$result = $sth->fetch();
-		
-		return $result[0];
+
+		return isset($result[0]) ? $result[0] : 0;
 	}
 }
