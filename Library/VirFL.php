@@ -106,30 +106,30 @@ class VirFL {
 			$result = $sth->fetch();
 			
 			if('file' == $result['type'])
-				return $list[$row['path']] = array(
+				return $list[$result['path']] = array(
 					'type' => 'file',
-					'size' => $row['size'],
-					'hash' => $row['hash'],
-					'version' => $row['version']
+					'size' => $result['size'],
+					'hash' => $result['hash'],
+					'version' => $result['version']
 				);
 			else
-				$list[$row['path']] = array('type' => 'dir');
+				$list[$result['path']] = array('type' => 'dir');
 			
 			$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
 			$sql = sprintf('SELECT * FROM files WHERE path REGEXP "%s"', $regex_path);
-			$sth = $SQLite->prepare($sql);
+			$sth = self::$_record->prepare($sql);
 			$sth->execute();
 			
-			while($row = $sth->fetch()) {
+			while($result = $sth->fetch()) {
 				if('file' == $result['type'])
-					$list[$row['path']] = array(
+					$list[$result['path']] = array(
 						'type' => 'file',
-						'size' => $row['size'],
-						'hash' => $row['hash'],
-						'version' => $row['version']
+						'size' => $result['size'],
+						'hash' => $result['hash'],
+						'version' => $result['version']
 					);
 				else
-					$list[$row['path']] = array('type' => 'dir');
+					$list[$result['path']] = array('type' => 'dir');
 			}
 		}
 
