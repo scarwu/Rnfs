@@ -48,8 +48,8 @@ class VirFL {
 			mkdir(self::$_root . '/data', 0755, TRUE);
 		
 		// Load files record list
-		if(!file_exists(self::$_root . '/record.db3')) {
-			self::$_record = new PDO('sqlite:' . self::$_root . '/record.db3');
+		if(!file_exists(self::$_root . '/record.sqlite3')) {
+			self::$_record = new PDO('sqlite:' . self::$_root . '/record.sqlite3');
 			self::$_record->query(
 				'CREATE TABLE files (' .
 					'path TEXT NOT NULL,' .
@@ -65,14 +65,33 @@ class VirFL {
 			self::$_record->query('INSERT INTO files (path, type) VALUES ("/", "dir")');
 		}
 		else
-			self::$_record = new PDO('sqlite:' . self::$_root . '/record.db3');
+			self::$_record = new PDO('sqlite:' . self::$_root . '/record.sqlite3');
 		
 		// Extend SQLite RegExp Function
 		self::$_record->sqliteCreateFunction('REGEXP', function($pattern, $subject) {
 			return preg_match("/{$pattern}/", $subject);
 		}, 2);
 	}
-	 
+	
+	/**
+	 * Mess String
+	 */
+	private static function messString($length = 16) {
+		$char = array(
+			'1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+			'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+			'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+			'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+			'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+			'Y', 'Z'
+		);
+		$str = '';
+		do {
+			$str .= $char[rand() % 62];
+		} while(strlen($str) < $length);
+		return $str;
+	}
 	
 	/**
 	 * Index Files
@@ -182,7 +201,6 @@ class VirFL {
 	 * @param string
 	 * @param string
 	 */
-	// FIXME need test
 	public static function move($sim_src, $sim_dest) {
 		// Check Sim Source and Sim Destination
 		if(!self::isExists($sim_src) || self::isExists($sim_dest))
@@ -238,7 +256,8 @@ class VirFL {
 			
 			// Generate Unique-Hash for File
 			do {
-				$hash = hash('md5', rand());
+				// $hash = hash('md5', rand());
+				$hash = self::messString();
 			}
 			while(file_exists(self::$_root . '/data/' . $hash));
 			
@@ -286,15 +305,7 @@ class VirFL {
 		$full_path = '';
 		foreach($segments as $segment) {
 			$full_path .= '/' . $segment;
-			if(!self::isExists($path)) {
-				// Add new record
-				$sth = self::$_record->prepare('INSERT INTO files (path, type) VALUES (:path, :type)');
-				$sth->execute(array(
-					':path' => $full_path,
-					':type' => 'dir'
-				));
-			}
-			elseif('file' != self::type($path)) {
+			if(!self::isExists($full_path)) {
 				// Add new record
 				$sth = self::$_record->prepare('INSERT INTO files (path, type) VALUES (:path, :type)');
 				$sth->execute(array(
@@ -323,7 +334,8 @@ class VirFL {
 
 		// Generate Unique-Hash for File
 		do {
-			$hash = hash('md5', rand());
+			// $hash = hash('md5', rand());
+			$hash = self::messString();
 		}
 		while(file_exists(self::$_root . '/data/' . $hash));
 		

@@ -27,6 +27,6 @@ define('CLX_APP_VIEWS', CLX_APP_ROOT . 'Views/');
 /**
  * Define CLx Core Path and Require CLx Core
  */
-define('CLX_SYS_ROOT', '/opt/CLx/');
+define('CLX_SYS_ROOT', '../CLx/');
  
 require_once CLX_SYS_ROOT . 'CLx.php';
