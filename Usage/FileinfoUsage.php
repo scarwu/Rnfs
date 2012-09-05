@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem Sync API Usage
+ * RNFileSystem File Information Usage
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -9,22 +9,18 @@
  * @link		http://github.com/scarwu/RNFileSystem
  */
 
-$usage['sync'] = array(
-	'POST' => array(
+$usage['fileinfo'] = array(
+	'GET' => array(
 		array(
-			'description' => 'Create Server push.',
-			'path' => '/sync/{username}',
+			'description' => 'Get file information.',
+			'path' => '/file/{filepath}',
 			'request' => array(
 				'header' => array(
 					'Access-Token' => array('string', 64)
 				)
 			),
 			'response' => array(
-				'json' => array(
-					'action' => array('string'),
-					'type' => array('string'),
-					'path' => array('steing')
-				)
+				'json' => array()
 			)
 		)
 	)

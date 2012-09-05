@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem Authentication API Usage
+ * RNFileSystem Authentication path Usage
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -13,39 +13,43 @@ $usage['auth'] = array(
 	'POST' => array(
 		array(
 			'description' => 'Verify identity and obtain token.',
-			'API' => '/auth',
-			'input' => array(
-				array('username', 'string', 24),
-				array('password', 'string', 24)
+			'path' => '/auth',
+			'request' => array(
+				'json' => array(
+					'username' => array('string', 24),
+					'password' => array('string', 24),
+					'encrypt' => array('boolean')
+				)
 			),
-			'output' => array(
-				array('status', 'array'),
-				array('token', 'string', 64)
+			'response' => array(
+				'json' => array(
+					'token' => array('string', 64)
+				)
 			)
 		)
 	),
 	'PUT' => array(
 		array(
 			'description' => 'Check token and extend token alive time.',
-			'API' => '/auth',
-			'input' => array(
-				array('token', 'string', 64)
+			'path' => '/auth',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				)
 			),
-			'output' => array(
-				array('status', 'array')
-			)
+			'response' => NULL
 		)
 	),
 	'DELETE' => array(
 		array(
 			'description' => 'Cancel authentication.',
-			'API' => '/auth',
-			'input' => array(
-				array('token', 'string', 64)
+			'path' => '/auth',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				)
 			),
-			'output' => array(
-				array('status', 'array')
-			)
+			'response' => NULL
 		)
 	)
 );
