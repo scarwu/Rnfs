@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/RNFileSystem
  */
 
-class FilelistController extends \CLx\Core\Controller {
+class FileinfoController extends \CLx\Core\Controller {
 
 	public function __construct() {
 		parent::__construct();
@@ -34,7 +34,6 @@ class FilelistController extends \CLx\Core\Controller {
 		$params = \CLx\Core\Request::params();
 		
 		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
-		$version = isset($params['version']) ? $params['version'] : 0;
 
 		if($username = $this->auth_model->updateToken($token)) {
 			// Database Disconnect
@@ -52,12 +51,8 @@ class FilelistController extends \CLx\Core\Controller {
 				StatusCode::setStatus(3004);
 			
 			// Load file or list
-			if(!StatusCode::isError()) {
-				if(VirFL::isDir($path))
-					CLx\Core\Response::toJSON(VirFL::index($path));
-				else
-					VirFL::read($path, NULL, $version);
-			}
+			if(!StatusCode::isError())
+				CLx\Core\Response::toJSON(VirFL::info($path));
 		}
 		
 		if(StatusCode::isError())

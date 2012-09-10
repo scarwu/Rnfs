@@ -19,23 +19,31 @@ class WsdlController extends \CLx\Core\Controller {
 	 * Get WSDL
 	 */
 	public function read($segments) {
+		// Load Usage
+		if($handle = @opendir(CLX_APP_ROOT . 'Usage')) {
+			while($file = readdir($handle))
+				if(is_file(CLX_APP_ROOT . 'Usage/' . $file))
+					require_once CLX_APP_ROOT . 'Usage/' . $file;
+			closedir($handle);
+		}
+		
 		header('Content-Type: application/xml; charset=utf-8');
 		
 		echo '<?xml version="1.0" encoding="UTF-8"?>';
-		echo '<description>';
+		echo '<wsdl:description xmlns:wsdl="http://www.w3.org/ns/wsdl">';
 
-		echo '<types>';
-		echo '</types>';
+		echo '<wsdl:types>';
+		echo '</wsdl:types>';
 		
-		echo '<interface>';
-		echo '</interface>';
+		echo '<wsdl:interface>';
+		echo '</wsdl:interface>';
 		
-		echo '<binding>';
-		echo '</binding>';
+		echo '<wsdl:binding>';
+		echo '</wsdl:binding>';
 		
-		echo '<service>';
-		echo '</service>';
+		echo '<wsdl:service>';
+		echo '</wsdl:service>';
 		
-		echo '</description>';
+		echo '</wsdl:description>';
 	}
 }

@@ -470,6 +470,22 @@ class VirFL {
 	 * 
 	 * @param string
 	 */
+	public static function info($path) {
+		if(!self::isExists($path))
+			return FALSE;
+		
+		$sth = self::$_record->prepare('SELECT type FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $path));
+		$result = $sth->fetch();
+		
+		return $result;
+	}
+	
+	/**
+	 * Check type
+	 * 
+	 * @param string
+	 */
 	public static function type($path) {
 		$sth = self::$_record->prepare('SELECT type FROM files WHERE path=:path');
 		$sth->execute(array(':path' => $path));
