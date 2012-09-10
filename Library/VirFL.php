@@ -474,11 +474,25 @@ class VirFL {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		$sth = self::$_record->prepare('SELECT type FROM files WHERE path=:path');
+		$sth = self::$_record->prepare('SELECT * FROM files WHERE path=:path');
 		$sth->execute(array(':path' => $path));
 		$result = $sth->fetch();
 		
-		return $result;
+		if('file' == $result['type']) {
+			$info = array(
+				'type' => $result['type'],
+				'size' => $result['size'],
+				'hash' => $result['hash'],
+				'version' => $result['version']
+			);
+		}
+		else {
+			$info = array(
+				'type' => $result['type']
+			);
+		}
+		
+		return $info;
 	}
 	
 	/**
