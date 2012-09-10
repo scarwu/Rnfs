@@ -313,7 +313,7 @@ class VirFL {
 					':type' => 'dir'
 				));
 			}
-			else
+			elseif('file' == self::type($full_path))
 				return FALSE;
 		}
 		
