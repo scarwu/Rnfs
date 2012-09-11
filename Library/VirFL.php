@@ -478,19 +478,15 @@ class VirFL {
 		$sth->execute(array(':path' => $path));
 		$result = $sth->fetch();
 		
-		if('file' == $result['type']) {
+		if('file' == $result['type'])
 			$info = array(
 				'type' => $result['type'],
 				'size' => $result['size'],
 				'hash' => $result['hash'],
 				'version' => $result['version']
 			);
-		}
-		else {
-			$info = array(
-				'type' => $result['type']
-			);
-		}
+		else
+			$info = array('type' => $result['type']);
 		
 		return $info;
 	}
