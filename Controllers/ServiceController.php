@@ -31,9 +31,7 @@ class ServiceController extends \CLx\Core\Controller {
 		}
 		
 		// Create List
-		$list = array();
-		foreach((array)$usage as $key => $value)
-			$list[] = $key;
+		$list = array_keys($usage);
 		sort($list);
 		
 		// Send Json

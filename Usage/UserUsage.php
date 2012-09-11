@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem User API Usage
+ * RNFileSystem User path Usage
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -10,57 +10,66 @@
  */
 
 $usage['user'] = array(
-	'POST' => array(
-		array(
-			'description' => 'Register a new user account.',
-			'API' => '/user/{username}',
-			'input' => array(
-				array('password', 'string', 32),
-				array('email', 'string', 32)
-			),
-			'output' => array(
-				array('status', 'array')
-			)
-		)
-	),
 	'GET' => array(
 		array(
 			'description' => 'Obtain user information.',
-			'API' => '/user/{username}',
-			'input' => array(
-				array('token', 'string', 64)
+			'path' => '/user/{username}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				)
 			),
-			'output' => array(
-				array('status', 'array'),
-				array('email', 'string', 24)
+			'response' => array(
+				'json' => array(
+					'username' => array('string'),
+					'email' => array('string'),
+					'upload_limit' => array('integer'),
+					'capacity' => array('integer'),
+					'used' => array('integer')
+				)
 			)
+		)
+	),
+	'POST' => array(
+		array(
+			'description' => 'Register a new user account.',
+			'path' => '/user/{username}',
+			'request' => array(
+				array('password', 'string', 32),
+				array('email', 'string', 32)
+			),
+			'response' => NULL
 		)
 	),
 	'PUT' => array(
 		array(
 			'description' => 'Update user information.',
-			'API' => '/user/{username}',
-			'input' => array(
-				array('token', 'string', 64),
-				array('old_password', 'string', 24),
-				array('new_password', 'string', 24)
+			'path' => '/user/{username}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				),
+				'json' => array(
+					'old_password' => array('string', 24),
+					'new_password' => array('string', 24)
+				)
 			),
-			'output' => array(
-				array('status', 'array')
-			)
+			'response' => NULL
 		)
 	),
 	'DELETE' => array(
 		array(
 			'description' => 'It will destroy user, be careful.',
-			'API' => '/user/{username}',
-			'input' => array(
-				array('token', 'string', 64),
-				array('password', 'string', 24)
+			'path' => '/user/{username}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				),
+				'json' => array(
+					'password' => array('string', 24)
+				)
 			),
-			'output' => array(
-				array('status', 'array')
-			)
+			'response' => NULL
 		)
 	)
 );

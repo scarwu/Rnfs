@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem File API Usage
+ * RNFileSystem File path Usage
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -10,57 +10,60 @@
  */
 
 $usage['file'] = array(
-	'POST' => array(
-		array(
-			'description' => 'Upload file or make directory.',
-			'API' => '/file/{filepath or dirpath}',
-			'input' => array(
-				array('token', 'string', 64),
-				array('File content')
-			),
-			'output' => array(
-				array('status', 'array')
-			)
-		)
-	),
 	'GET' => array(
 		array(
 			'description' => 'Download file.',
-			'API' => '/file/{filepath}',
-			'input' => array(
-				array('token', 'string', 64),
-				array('filerange', 'int')
+			'path' => '/file/{filepath}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				)
 			),
-			'output' => array(
-				array('status', 'array'),
-				array('File content')
+			'response' => array(
+				'json' => array(),
+				'file_content' => TRUE
 			)
+		)
+	),
+	'POST' => array(
+		array(
+			'description' => 'Upload file or make directory.',
+			'path' => '/file/{filepath}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				),
+				'file_content' => TRUE
+			),
+			'response' => NULL
 		)
 	),
 	'PUT' => array(
 		array(
 			'description' => 'Update directory or file.',
-			'API' => '/file/{filepath or dirpath}',
-			'input' => array(
-				array('token', 'string', 64),
-				array('newpath', 'string'),
-				array('File content')
+			'path' => '/file/{filepath}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				),
+				'json' => array(
+					'path' => array('string')
+				),
+				'file_content' => TRUE
 			),
-			'output' => array(
-				array('status', 'array')
-			)
+			'response' => NULL
 		)
 	),
 	'DELETE' => array(
 		array(
 			'description' => 'Delete the directory or the file.',
-			'API' => '/file/{filepath or dirpath}',
-			'input' => array(
-				array('token', 'string', 64)
+			'path' => '/file/{filepath}',
+			'request' => array(
+				'header' => array(
+					'Access-Token' => array('string', 64)
+				)
 			),
-			'output' => array(
-				array('status', 'array')
-			)
+			'response' => NULL
 		)
 	)
 );

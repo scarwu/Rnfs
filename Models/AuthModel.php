@@ -50,7 +50,8 @@ class AuthModel extends \CLx\Core\Model {
 		$this->deleteDBTokenByTime($username, $time-$this->auth_config['timeout']);
 		
 		while(1) {
-			$token = hash('sha256', rand().$time);
+			$token = $this->messString(32);
+			// $token = hash('sha256', rand().$time);
 			if(!$this->loginByToken($token)) {
 				$this->createDBToken($token, $username, $time);
 				break;
@@ -58,6 +59,24 @@ class AuthModel extends \CLx\Core\Model {
 		}
 
 		return $token;
+	}
+	
+	// Mess String
+	private function messString($length = 16) {
+		$char = array(
+			'1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+			'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+			'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+			'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+			'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+			'Y', 'Z'
+		);
+		$str = '';
+		do {
+			$str .= $char[rand() % 62];
+		} while(strlen($str) < $length);
+		return $str;
 	}
 	
 	// Update Token

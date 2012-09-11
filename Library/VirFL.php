@@ -313,7 +313,7 @@ class VirFL {
 					':type' => 'dir'
 				));
 			}
-			else
+			elseif('file' == self::type($full_path))
 				return FALSE;
 		}
 		
@@ -463,6 +463,32 @@ class VirFL {
 		}
 		
 		return TRUE;
+	}
+	
+	/**
+	 * Check type
+	 * 
+	 * @param string
+	 */
+	public static function info($path) {
+		if(!self::isExists($path))
+			return FALSE;
+		
+		$sth = self::$_record->prepare('SELECT * FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $path));
+		$result = $sth->fetch();
+		
+		if('file' == $result['type'])
+			$info = array(
+				'type' => $result['type'],
+				'size' => $result['size'],
+				'hash' => $result['hash'],
+				'version' => $result['version']
+			);
+		else
+			$info = array('type' => $result['type']);
+		
+		return $info;
 	}
 	
 	/**

@@ -13,12 +13,14 @@ $usage['service'] = array(
 	'GET' => array(
 		array(
 			'description' => 'Obtain service list and service usage.',
-			'API' => '/service',
-			'input' => array(),
-			'output' => array(
-				array('list', 'array'),
-				array('usage', 'array'),
-				array('code', 'array')
+			'path' => '/service',
+			'request' => NULL,
+			'response' => array(
+				'json' => array(
+					'list' => array('array'),
+					'usage' => array('array'),
+					'status_code' => array('array')
+				)
 			)
 		)
 	)
