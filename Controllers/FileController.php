@@ -112,7 +112,8 @@ class FileController extends \CLx\Core\Controller {
 							'type' => 'file',
 							'path' => $path,
 							'hash' => hash_file('md5', $files['tmp_name']),
-							'size' => $files['size']
+							'size' => $files['size'],
+							'version' => 0
 						)
 					));
 				}
@@ -184,6 +185,8 @@ class FileController extends \CLx\Core\Controller {
 				}
 				
 				if(!StatusCode::isError()) {
+					$info = VirFL::index($path);
+					
 					\CLx\Core\Event::trigger('file_change', array(
 						'user' => $username,
 						'token' => $token,
@@ -191,8 +194,9 @@ class FileController extends \CLx\Core\Controller {
 							'action' => 'update',
 							'type' => 'file',
 							'path' => $path,
-							'hash' => hash_file('md5', $files['tmp_name']),
-							'size' => $files['size']
+							'hash' => $info['hash'],
+							'size' => $info['size'],
+							'version' => $info['version']
 						)
 					));
 				}
