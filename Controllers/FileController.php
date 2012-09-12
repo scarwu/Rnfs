@@ -194,9 +194,9 @@ class FileController extends \CLx\Core\Controller {
 							'action' => 'update',
 							'type' => 'file',
 							'path' => $path,
-							'hash' => $info['hash'],
-							'size' => $info['size'],
-							'version' => $info['version']
+							'hash' => $info[$path]['hash'],
+							'size' => $info[$path]['size'],
+							'version' => $info[$path]['version']
 						)
 					));
 				}
