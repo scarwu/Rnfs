@@ -206,15 +206,15 @@ class VirFL {
 		if(!self::isExists($sim_src) || self::isExists($sim_dest))
 			return FALSE;
 		
-		// Create full directory path
-		self::createFullDirPath($sim_dest, self::type($sim_src));
-
 		// Change old path to new path
 		$sth = self::$_record->prepare('UPDATE files SET path=:new_path WHERE path=:path');
 		$sth->execute(array(
 			':path' => $sim_src,
 			':new_path' => $sim_dest
 		));
+		
+		// Create full directory path
+		self::createFullDirPath($sim_dest, self::type($sim_src));
 		
 		if('dir' == self::type($sim_dest)) {
 			// Load file path
