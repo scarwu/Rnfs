@@ -42,7 +42,7 @@ class FileinfoController extends \CLx\Core\Controller {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
-			VirFL::init(FILE_LOCATE);
+			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
 			
 			$path = $this->file_model->parsePath($segments);
 
