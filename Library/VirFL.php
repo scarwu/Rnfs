@@ -56,6 +56,7 @@ class VirFL {
 					'type TEXT NOT NULL,' .
 					'size INTEGER,' .
 					'hash TEXT,' .
+					'time INTEGER,' .
 					'version INTEGER,' .
 					'revision TEXT' .
 				')'
@@ -106,6 +107,7 @@ class VirFL {
 						'type' => 'file',
 						'size' => $row['size'],
 						'hash' => $row['hash'],
+						'time' => $row['time'],
 						'version' => $row['version']
 					);
 				}
@@ -128,6 +130,7 @@ class VirFL {
 					'type' => 'file',
 					'size' => $result['size'],
 					'hash' => $result['hash'],
+					'time' => $result['time'],
 					'version' => $result['version']
 				);
 			else
@@ -144,6 +147,7 @@ class VirFL {
 						'type' => 'file',
 						'size' => $result['size'],
 						'hash' => $result['hash'],
+						'time' => $result['time'],
 						'version' => $result['version']
 					);
 				else
@@ -266,12 +270,13 @@ class VirFL {
 				return FALSE;
 			
 			// Add new record
-			$sth = self::$_record->prepare('INSERT INTO files (path, type, size, hash, version, revision) VALUES (:path, :type, :size, :hash, :version, :revision)');
+			$sth = self::$_record->prepare('INSERT INTO files (path, type, size, hash, time, version, revision) VALUES (:path, :type, :size, :hash, :time, :version, :revision)');
 			$sth->execute(array(
 				':path' => $sim_path,
 				':type' => 'file',
 				':size' => filesize(self::$_root . '/data/' . $hash),
 				':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
+				':time' => filectime(self::$_root . '/data/' . $hash),
 				':version' => 0,
 				':revision' => json_encode(array($hash))
 			));
@@ -343,20 +348,24 @@ class VirFL {
 		if(!copy($real_path, self::$_root . '/data/' . $hash))
 			return FALSE;
 		
-		self::$_record->prepare('SELECT hash,version,revision FROM files WHERE path=:path');
-		$sth = self::execute(array(
-			':path' => $sim_path
-		));
+		$sth = self::$_record->prepare('SELECT hash,version,revision FROM files WHERE path=:path');
+		$sth->execute(array(':path' => $sim_path));
 		$result = $sth->fetch();
 		
 		// Add new record
 		$result['revision'] = json_decode($result['revision'], TRUE);
 		array_unshift($result['revision'], $hash);
 		
-		self::$_record->prepare('UPDATE files SET hash=:hash, version=:versoin, revision=:revision WHERE path=:path');
-		$sth = self::execute(array(
+		while(count($result['revision']) > self::$_revert) {
+			$hash = array_pop($result['revision']);
+			unlink(self::$_root . '/data/' . $hash);
+		}
+
+		$sth = self::$_record->prepare('UPDATE files SET hash=:hash, time=:time, version=:version, revision=:revision WHERE path=:path');
+		$sth->execute(array(
 			':path' => $sim_path,
 			':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
+			':time' => filectime(self::$_root . '/data/' . $hash),
 			':version' => $result['version']+1,
 			':revision' => json_encode($result['revision'])
 		));
@@ -483,6 +492,7 @@ class VirFL {
 				'type' => $result['type'],
 				'size' => $result['size'],
 				'hash' => $result['hash'],
+				'time' => $result['time'],
 				'version' => $result['version']
 			);
 		else

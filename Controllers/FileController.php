@@ -43,7 +43,7 @@ class FileController extends \CLx\Core\Controller {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
-			VirFL::init(FILE_LOCATE);
+			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
 			
 			$path = $this->file_model->parsePath($segments);
 
@@ -80,7 +80,7 @@ class FileController extends \CLx\Core\Controller {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
-			VirFL::init(FILE_LOCATE);
+			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
 			
 			$path = $this->file_model->parsePath($segments);
 			
@@ -161,7 +161,7 @@ class FileController extends \CLx\Core\Controller {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
-			VirFL::init(FILE_LOCATE);
+			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
 			
 			$path = $this->file_model->parsePath($segments);
 			
@@ -194,9 +194,9 @@ class FileController extends \CLx\Core\Controller {
 							'action' => 'update',
 							'type' => 'file',
 							'path' => $path,
-							'hash' => $info[$path]['hash'],
-							'size' => $info[$path]['size'],
-							'version' => $info[$path]['version']
+							'hash' => $info['hash'],
+							'size' => $info['size'],
+							'version' => $info['version']
 						)
 					));
 				}
@@ -255,7 +255,7 @@ class FileController extends \CLx\Core\Controller {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
-			VirFL::init(FILE_LOCATE);
+			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
 			
 			$path = $this->file_model->parsePath($segments);
 			
