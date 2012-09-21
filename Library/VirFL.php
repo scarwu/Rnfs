@@ -357,8 +357,8 @@ class VirFL {
 		array_unshift($result['revision'], $hash);
 		
 		while(count($result['revision']) > self::$_revert) {
-			$hash = array_pop($result['revision']);
-			unlink(self::$_root . '/data/' . $hash);
+			$tmp_hash = array_pop($result['revision']);
+			unlink(self::$_root . '/data/' . $tmp_hash);
 		}
 
 		$sth = self::$_record->prepare('UPDATE files SET hash=:hash, time=:time, version=:version, revision=:revision WHERE path=:path');
