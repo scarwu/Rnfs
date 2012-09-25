@@ -16,7 +16,7 @@ $usage['file'] = array(
 			'path' => '/file/{filepath}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				)
 			),
 			'response' => array(
@@ -31,7 +31,7 @@ $usage['file'] = array(
 			'path' => '/file/{filepath}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				),
 				'file_content' => TRUE
 			),
@@ -44,7 +44,7 @@ $usage['file'] = array(
 			'path' => '/file/{filepath}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				),
 				'json' => array(
 					'path' => array('string')
@@ -60,7 +60,7 @@ $usage['file'] = array(
 			'path' => '/file/{filepath}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				)
 			),
 			'response' => NULL

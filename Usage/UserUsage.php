@@ -16,7 +16,7 @@ $usage['user'] = array(
 			'path' => '/user/{username}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				)
 			),
 			'response' => array(
@@ -47,7 +47,7 @@ $usage['user'] = array(
 			'path' => '/user/{username}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				),
 				'json' => array(
 					'old_password' => array('string', 24),
@@ -63,7 +63,7 @@ $usage['user'] = array(
 			'path' => '/user/{username}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				),
 				'json' => array(
 					'password' => array('string', 24)
