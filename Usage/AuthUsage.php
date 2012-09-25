@@ -34,7 +34,7 @@ $usage['auth'] = array(
 			'path' => '/auth',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				)
 			),
 			'response' => NULL
@@ -46,7 +46,7 @@ $usage['auth'] = array(
 			'path' => '/auth',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				)
 			),
 			'response' => NULL

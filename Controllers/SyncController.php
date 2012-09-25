@@ -27,7 +27,7 @@ class SyncController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
-		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
+		$token = isset($headers['X-Rnfs-Token']) ? $headers['X-Rnfs-Token'] : NULL;
 		$username = !empty($segments[0]) ? strtolower($segments[0]) : NULL;
 		
 		if(NULL == $username)

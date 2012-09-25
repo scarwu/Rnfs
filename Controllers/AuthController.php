@@ -44,7 +44,7 @@ class AuthController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		
 		// Get headers detail
-		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
+		$token = isset($headers['X-Rnfs-Token']) ? $headers['X-Rnfs-Token'] : NULL;
 		
 		$this->auth_model->updateToken($token);
 		
@@ -59,7 +59,7 @@ class AuthController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		
 		// Get headers detail
-		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
+		$token = isset($headers['X-Rnfs-Token']) ? $headers['X-Rnfs-Token'] : NULL;
 		
 		$this->auth_model->deleteToken($token);
 		

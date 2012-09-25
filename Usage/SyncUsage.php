@@ -16,7 +16,7 @@ $usage['sync'] = array(
 			'path' => '/sync/{username}',
 			'request' => array(
 				'header' => array(
-					'Access-Token' => array('string', 64)
+					'X-Rnfs-Token' => array('string', 64)
 				)
 			),
 			'response' => array(

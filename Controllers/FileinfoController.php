@@ -33,7 +33,7 @@ class FileinfoController extends \CLx\Core\Controller {
 		$headers = \CLx\Core\Request::headers();
 		$params = \CLx\Core\Request::params();
 		
-		$token = isset($headers['Access-Token']) ? $headers['Access-Token'] : NULL;
+		$token = isset($headers['X-Rnfs-Token']) ? $headers['X-Rnfs-Token'] : NULL;
 
 		if($username = $this->auth_model->updateToken($token)) {
 			// Database Disconnect
