@@ -17,7 +17,8 @@
 		}
 		
 		header,
-		footer {
+		footer,
+		#main {
 			text-align: center;
 		}
 	</style>
@@ -27,7 +28,7 @@
 		<h1>RESTful Network File System</h1>
 	</header>
 	<div id="main">
-		
+		<h2><?php echo "{$_SERVER['HTTP_HOST']}"; ?></h2>
 	</div>
 	<footer>
 		<h4>Copyright (c) 2011-2012, ScarWu <a href="http://scar.simcz.tw">ScarShow</a></h4>
