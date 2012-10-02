@@ -48,6 +48,7 @@ class FileController extends \CLx\Core\Controller {
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
+				'backup' => $this->file_config['backup'],
 				'user' => $this->database_config['user'],
 				'pass' => $this->database_config['pass'],
 				'host' => $this->database_config['host'],

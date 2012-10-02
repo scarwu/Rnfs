@@ -46,7 +46,7 @@ class UserModel extends \CLx\Core\Model {
 			return FALSE;
 		}
 		
-		$sql = 'INSERT INTO `accounts` SET `username`=:un, `password`=:pw, `email`=:em';
+		$sql = 'INSERT INTO accounts SET username=:un, password=:pw, email=:em';
 		$params = array(':un' => $username, ':pw' => $password, ':em' => $email);
 		if($this->_db->query($sql, $params)->insertId())
 			return TRUE;
@@ -70,7 +70,7 @@ class UserModel extends \CLx\Core\Model {
 		}
 
 		// Check update success
-		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:opw';
+		$sql = 'SELECT * FROM accounts WHERE username=:un AND password=:opw';
 		$params = array(':un' => $username, ':opw' => $old_password);
 		if(0 == count($this->_db->query($sql, $params)->asArray())) {
 			StatusCode::setStatus(3002);
@@ -78,7 +78,7 @@ class UserModel extends \CLx\Core\Model {
 		}
 
 		// Update password
-		$sql = 'UPDATE `accounts` SET `password`=:npw WHERE `username`=:un AND `password`=:opw';
+		$sql = 'UPDATE accounts SET password=:npw WHERE username=:un AND password=:opw';
 		$params = array(
 			':npw' => $new_password,
 			':un' => $username,
@@ -87,7 +87,7 @@ class UserModel extends \CLx\Core\Model {
 		$this->_db->query($sql, $params);
 		
 		// Check update success
-		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:npw';
+		$sql = 'SELECT * FROM accounts WHERE username=:un AND password=:npw';
 		$params = array(':un' => $username, ':npw' => $new_password);
 		if(0 == count($this->_db->query($sql, $params)->asArray())) {
 			StatusCode::setStatus(3002);
@@ -99,7 +99,7 @@ class UserModel extends \CLx\Core\Model {
 	
 	private function isUserExist($username) {
 		if(NULL != $username) {
-			$sql = 'SELECT username FROM `accounts` WHERE `username`=:un';
+			$sql = 'SELECT username FROM accounts WHERE username=:un';
 			$params = array(':un' => $username);
 			return 0 != count($this->_db->query($sql, $params)->asArray()) ? TRUE : FALSE;
 		}
@@ -122,11 +122,11 @@ class UserModel extends \CLx\Core\Model {
 			return FALSE;
 		}
 		
-		$sql = 'DELETE FROM `accounts` WHERE `username`=:un AND `password`=:pw';
+		$sql = 'DELETE FROM accounts WHERE username=:un AND password=:pw';
 		$params = array(':un' => $username, ':pw' => $password);
 		$this->_db->query($sql, $params);
 		if(!$this->isUserExist($username)) {
-			$sql = 'DELETE FROM `tokenlist` WHERE `username`=:un';
+			$sql = 'DELETE FROM tokenlist WHERE username=:un';
 			$params = array(':un' => $username);
 			$this->_db->query($sql, $params);
 			return TRUE;
@@ -134,7 +134,7 @@ class UserModel extends \CLx\Core\Model {
 	}
 
 	public function getUserUseUsername($username) {
-		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un';
+		$sql = 'SELECT * FROM accounts WHERE username=:un';
 		$params = array(':un' => $username);
 		return $this->_db->query($sql, $params)->asArray();
 	}

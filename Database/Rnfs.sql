@@ -21,18 +21,6 @@ CREATE TABLE IF NOT EXISTS `tokenlist` (
 	FOREIGN KEY (`username`) REFERENCES accounts (`username`) ON DELETE CASCADE
 ) ENGINE=INNODB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `files` (
-	`username` VARCHAR(24) NOT NULL,
-	`instance` TEXT NOT NULL,
-	`path` TEXT NOT NULL,
-	`type` text NOT NULL,
-	`size` INT(10),
-	`hash` TEXT,
-	`version` INT(10),
-	`revision` TEXT,
-	FOREIGN KEY (`username`) REFERENCES accounts (`username`) ON DELETE CASCADE
-) ENGINE=INNODB DEFAULT CHARSET=utf8;
-
 INSERT INTO `accounts` SET `username`="testuser", `password`="179ad45c6ce2cb97cf1029e212046e81", `email`="test@example.com";
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

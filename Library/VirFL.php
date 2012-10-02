@@ -32,6 +32,11 @@ class VirFL {
 	private static $_revert = 0;
 	
 	/**
+	 * @var int
+	 */
+	private static $_backup = 1;
+	
+	/**
 	 * @var boolean / int
 	 */
 	private static $_is_error = false;
@@ -47,10 +52,18 @@ class VirFL {
 		if(!class_exists('PDO'))
 			throw new Exception('PDO is not exists.');
 		
-		self::$_username = $config['username'];
+		// Local root
 		self::$_root = $config['root'];
+		
+		// Distributed backup amount
+		self::$_backup = $config['backup'];
+		
+		// Files revert revision
 		if(isset($config['$revert']) && NULL != $config['revert'])
 			self::$_revert = $config['$revert'];
+		
+		// Database table postfix
+		self::$_username = $config['username'];
 		
 		// Make root folder
 		if(!file_exists(self::$_root . '/data'))
@@ -63,9 +76,10 @@ class VirFL {
 		self::$_record->query("SET CHARACTER_SET_CLIENT=utf8");
 		self::$_record->query("SET CHARACTER_SET_RESULTS=utf8");
 		
+		// Create files table
 		self::$_record->query(
 			'CREATE TABLE IF NOT EXISTS files_' . self::$_username . ' (' .
-				'instance TEXT NOT NULL,' .
+				'entity TEXT NOT NULL,' .
 				'path TEXT NOT NULL,' .
 				'type text NOT NULL,' .
 				'size INT(10),' .
@@ -278,8 +292,9 @@ class VirFL {
 				return FALSE;
 			
 			// Add new record
-			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (path, type, size, hash, time, version, revision) VALUES (:path, :type, :size, :hash, :time, :version, :revision)');
+			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (entity, path, type, size, hash, time, version, revision) VALUES (:entity, :path, :type, :size, :hash, :time, :version, :revision)');
 			$sth->execute(array(
+				':entity' => json_encode(array($_SERVER['SERVER_ADDR'])),
 				':path' => $sim_path,
 				':type' => 'file',
 				':size' => filesize(self::$_root . '/data/' . $hash),
@@ -361,16 +376,24 @@ class VirFL {
 		$result = $sth->fetch();
 		
 		// Add new record
+		$result['entity'] = json_decode($result['entity'], TRUE);
+		array_unshift($result['entity'], $_SERVER['SERVER_ADDR']);
+		
 		$result['revision'] = json_decode($result['revision'], TRUE);
 		array_unshift($result['revision'], $hash);
+		
 		
 		while(count($result['revision']) > self::$_revert) {
 			$tmp_hash = array_pop($result['revision']);
 			unlink(self::$_root . '/data/' . $tmp_hash);
+			
+			// FIXME Need delete else server's file
+			array_pop($result['entity']);
 		}
 
-		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET hash=:hash, time=:time, version=:version, revision=:revision WHERE path=:path');
+		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET entity=:entity, hash=:hash, time=:time, version=:version, revision=:revision WHERE path=:path');
 		$sth->execute(array(
+			':entity' => json_encode($result['entity']),
 			':path' => $sim_path,
 			':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
 			':time' => filectime(self::$_root . '/data/' . $hash),

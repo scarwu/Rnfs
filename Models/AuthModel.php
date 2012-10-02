@@ -118,7 +118,7 @@ class AuthModel extends \CLx\Core\Model {
 	 */
 	// Login By username and password
 	private function loginByUsernameAndPassword($username, $password) {
-		$sql = 'SELECT * FROM `accounts` WHERE `username`=:un AND `password`=:pw';
+		$sql = 'SELECT * FROM accounts WHERE username=:un AND password=:pw';
 		$params = array(':un' => $username, ':pw' => hash('md5', $password));
 		return 1 == count($this->_db->query($sql, $params)->asArray()) ? TRUE : FALSE;
 	}
@@ -126,11 +126,11 @@ class AuthModel extends \CLx\Core\Model {
 	// Login By token
 	private function loginByToken($token, $time = NULL) {
 		if(NULL == $time) {
-			$sql = 'SELECT * FROM `tokenlist` WHERE `token`=:tk';
+			$sql = 'SELECT * FROM tokenlist WHERE token=:tk';
 			$params = array(':tk' => $token);
 		}
 		else {
-			$sql = 'SELECT * FROM `tokenlist` WHERE `token`=:tk AND `timestamp`>=:ti';
+			$sql = 'SELECT * FROM tokenlist WHERE token=:tk AND timestamp>=:ti';
 			$params = array(':tk' => $token, ':ti' => $time);
 		}
 		
@@ -140,28 +140,28 @@ class AuthModel extends \CLx\Core\Model {
 		
 	// Update Token Time by Time
 	private function updateDBTokenTimeByToken($token, $time) {
-		$sql = 'UPDATE `tokenlist` SET `timestamp`=:ti WHERE `token`=:tk';
+		$sql = 'UPDATE tokenlist SET timestamp=:ti WHERE token=:tk';
 		$params = array('ti' => $time, ':tk' => $token);
 		$this->_db->query($sql, $params);
 	}
 	
 	// Delete Token By Token
 	private function deleteDBTokenByToken($token) {
-		$sql = 'DELETE FROM `tokenlist` WHERE `token`=:tk';
+		$sql = 'DELETE FROM tokenlist WHERE token=:tk';
 		$params = array(':tk' => $token);
 		$this->_db->query($sql, $params);
 	}
 	
 	// Delete Token By Time
 	public function deleteDBTokenByTime($username, $time) {
-		$sql = 'DELETE FROM `tokenlist` WHERE `username`=:un AND `timestamp`<:ti';
+		$sql = 'DELETE FROM tokenlist WHERE username=:un AND timestamp<:ti';
 		$params = array(':un' => $username, ':ti' => $time);
 		$this->_db->query($sql, $params);
 	}
 	
 	// Create Token
 	private function createDBToken($token, $username, $time) {
-		$sql = 'INSERT INTO `tokenlist` SET `token`=:tk, `username`=:un, `timestamp`=:ti';
+		$sql = 'INSERT INTO tokenlist SET token=:tk, username=:un, timestamp=:ti';
 		$params = array(':tk' => $token, ':un' => $username, ':ti' => $time);
 		$this->_db->query($sql, $params);
 	}
