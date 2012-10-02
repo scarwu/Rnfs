@@ -16,6 +16,7 @@ class FileinfoController extends \CLx\Core\Controller {
 		
 		// Load Config
 		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+		$this->database_config = \CLx\Core\Loader::config('Database', CLX_MODE);
 
 		// Load Library
 		\CLx\Core\Loader::library('StatusCode');
@@ -34,7 +35,7 @@ class FileinfoController extends \CLx\Core\Controller {
 		$params = \CLx\Core\Request::params();
 		
 		$token = isset($headers['X-Rnfs-Token']) ? $headers['X-Rnfs-Token'] : NULL;
-
+		
 		if($username = $this->auth_model->updateToken($token)) {
 			// Database Disconnect
 			\CLx\Library\Database::disconnect();
@@ -42,7 +43,17 @@ class FileinfoController extends \CLx\Core\Controller {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
 			// Initialize VirFL
-			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
+			VirFL::init(array(
+				'username' => $username,
+				'root' => FILE_LOCATE,
+				'revert' => $this->file_config['revert'],
+				'backup' => $this->file_config['backup'],
+				'user' => $this->database_config['user'],
+				'pass' => $this->database_config['pass'],
+				'host' => $this->database_config['host'],
+				'port' => $this->database_config['port'],
+				'name' => $this->database_config['name']
+			));
 			
 			$path = $this->file_model->parsePath($segments);
 

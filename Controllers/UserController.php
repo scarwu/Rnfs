@@ -17,6 +17,7 @@ class UserController extends \CLx\Core\Controller {
 		// Load Config
 		$this->auth_config = \CLx\Core\Loader::config('Config', 'auth');
 		$this->file_config = \CLx\Core\Loader::config('Config', 'file');
+		$this->database_config = \CLx\Core\Loader::config('Database', CLX_MODE);
 		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
@@ -47,7 +48,17 @@ class UserController extends \CLx\Core\Controller {
 			
 			// Load VirFL and Initialize
 			\CLx\Core\Loader::Library('VirFL');
-			VirFL::init(FILE_LOCATE, $this->file_config['revert']);
+			VirFL::init(array(
+				'username' => $username,
+				'root' => FILE_LOCATE,
+				'revert' => $this->file_config['revert'],
+				'backup' => $this->file_config['backup'],
+				'user' => $this->database_config['user'],
+				'pass' => $this->database_config['pass'],
+				'host' => $this->database_config['host'],
+				'port' => $this->database_config['port'],
+				'name' => $this->database_config['name']
+			));
 			
 			// Load User Information
 			$result = $this->user_model->getUserUseUsername($username);

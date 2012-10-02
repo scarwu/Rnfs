@@ -19,7 +19,8 @@ $Config['file'] = array(
 	'encode' => PHP_OS == 'Linux' ? 'UTF-8' : 'BIG5',
 	'upload_limit' => 268435456,
 	'capacity' => 1073741824,
-	'revert' => 1
+	'revert' => 1,
+	'backup' => 2
 );
 
 $Config['sync'] = array(

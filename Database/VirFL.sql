@@ -6,3 +6,14 @@ CREATE TABLE files (
 	version INTEGER,
 	revision TEXT
 );
+
+CREATE TABLE IF NOT EXISTS files (
+	instance TEXT NOT NULL,
+	path TEXT NOT NULL,
+	type text NOT NULL,
+	size INT(10),
+	hash TEXT,
+	time INT(10),
+	version INT(10),
+	revision TEXT
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
