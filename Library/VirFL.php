@@ -382,7 +382,6 @@ class VirFL {
 		$result['revision'] = json_decode($result['revision'], TRUE);
 		array_unshift($result['revision'], $hash);
 		
-		
 		while(count($result['revision']) > self::$_revert) {
 			$tmp_hash = array_pop($result['revision']);
 			unlink(self::$_root . '/data/' . $tmp_hash);
@@ -421,6 +420,13 @@ class VirFL {
 		
 		if(NULL == $version)
 			$version = count($result['version'])-1;
+		
+		$result['entity'] = json_decode($result['entity'], TRUE);
+		
+		if($_SERVER['SERVER_ADDR'] != $result['entity'][$version]) {
+			header('Location: http://' . $result['entity'][$version] . ':' . $_SERVER['SERVER_PORT'] . \CLx\Core\Request::uri());
+			return FALSE;
+		}
 		
 		// Check file version exists
 		if($result['version'] < $version && $version < 0)
