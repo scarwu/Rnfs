@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem Virtual DFS
+ * RNFileSystem Virtual File Layer with Parliament DFS
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -9,7 +9,7 @@
  * @link		http://github.com/scarwu/RNFileSystem
  */
 
-class VirFL {
+class VirDFS {
 	
 	/**
 	 * @var string
@@ -32,11 +32,6 @@ class VirFL {
 	private static $_revert = 0;
 	
 	/**
-	 * @var int
-	 */
-	private static $_backup = 1;
-	
-	/**
 	 * @var boolean / int
 	 */
 	private static $_is_error = false;
@@ -54,9 +49,6 @@ class VirFL {
 		
 		// Local root
 		self::$_root = $config['root'];
-		
-		// Distributed backup amount
-		self::$_backup = $config['backup'];
 		
 		// Files revert revision
 		if(isset($config['$revert']) && NULL != $config['revert'])
@@ -80,13 +72,14 @@ class VirFL {
 		self::$_record->query(
 			'CREATE TABLE IF NOT EXISTS files_' . self::$_username . ' (' .
 				'path TEXT NOT NULL,' .
-				'type TEXT NOT NULL,' .
+				'type VARCHAR(4) NOT NULL,' .
 				'size INT(10),' .
-				'hash TEXT,' .
+				'hash VARCHAR(32),' .
 				'time INT(10),' .
+				'mime VARCHAR(16),' .
 				'version INT(10),' .
-				'revision INT(10)' .
-				'unique_id VARCHAR(128)' .
+				'revision INT(10),' .
+				'unique_hash VARCHAR(16)' .
 			') ENGINE=INNODB DEFAULT CHARSET=utf8;'
 		);
 		
@@ -123,18 +116,19 @@ class VirFL {
 		if('/' === $path) {
 			$list = array();
 			$sth = self::$_record->query('SELECT * FROM files_' . self::$_username);
-			while($row = $sth->fetch()) {
-				if('file' == $row['type']) {
-					$list[$row['path']] = array(
+			while($result = $sth->fetch()) {
+				if('file' == $result['type']) {
+					$list[$result['path']] = array(
 						'type' => 'file',
-						'size' => $row['size'],
-						'hash' => $row['hash'],
-						'time' => $row['time'],
-						'version' => $row['version']
+						'size' => $result['size'],
+						'hash' => $result['hash'],
+						'time' => $result['time'],
+						'mime' => $result['mime'],
+						'version' => $result['version']
 					);
 				}
 				else
-					$list[$row['path']] = array('type' => 'dir');
+					$list[$result['path']] = array('type' => 'dir');
 			}
 		}
 		else {
@@ -153,6 +147,7 @@ class VirFL {
 					'size' => $result['size'],
 					'hash' => $result['hash'],
 					'time' => $result['time'],
+					'mime' => $result['mime'],
 					'version' => $result['version']
 				);
 			else
@@ -186,40 +181,40 @@ class VirFL {
 	 * @param string
 	 */
 	// FIXME need test
-	public static function revert($path, $version = NULL) {
-		// Check file is exists
-		if(!self::isExists($path))
-			return FALSE;
+	// public static function revert($path, $version = NULL) {
+	// 	// Check file is exists
+	// 	if(!self::isExists($path))
+	// 		return FALSE;
 		
-		if(NULL == $version)
-			return FALSE;
+	// 	if(NULL == $version)
+	// 		return FALSE;
 		
-		// Check File version is exists
-		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
-		$sth->execute(array(':path' => $path));
-		$result = $sth->fetch();
+	// 	// Check File version is exists
+	// 	$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
+	// 	$sth->execute(array(':path' => $path));
+	// 	$result = $sth->fetch();
 		
-		// Check file version exists
-		if($result['version'] < $version && $version < 0)
-			return FALSE;
+	// 	// Check file version exists
+	// 	if($result['version'] < $version && $version < 0)
+	// 		return FALSE;
 		
-		$result['revision'] = json_decode($result['revision'], TRUE);
+	// 	$result['revision'] = json_decode($result['revision'], TRUE);
 		
-		// Delete new version
-		for($i = count($result['revision'])-1;$i > $version;--$i) {
-			$hash = array_pop($result['revision']);
-			unlink(self::$_root . '/data/' . $hash);
-		}
+	// 	// Delete new version
+	// 	for($i = count($result['revision'])-1;$i > $version;--$i) {
+	// 		$hash = array_pop($result['revision']);
+	// 		unlink(self::$_root . '/data/' . $hash);
+	// 	}
 		
-		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET version=:version, revision=:revision WHERE path=:path');
-		$sth->execute(array(
-			':path' => $path,
-			':version' => $version,
-			':revision' => json_encode($result['revision'])
-		));
+	// 	$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET version=:version, revision=:revision WHERE path=:path');
+	// 	$sth->execute(array(
+	// 		':path' => $path,
+	// 		':version' => $version,
+	// 		':revision' => json_encode($result['revision'])
+	// 	));
 
-		return TRUE;
-	}
+	// 	return TRUE;
+	// }
 	
 	/**
 	 * Move File
@@ -282,26 +277,29 @@ class VirFL {
 			
 			// Generate Unique-Hash for File
 			do {
-				// $hash = hash('md5', rand());
-				$hash = self::messString();
+				$unique_hash = self::messString();
 			}
-			while(file_exists(self::$_root . '/data/' . $hash));
+			while(Parliament::isExists(self::$_username . '_' . $unique_hash . '_0'));
 			
-			// Copy Real File to VirFL
-			if(!copy($real_path, self::$_root . '/data/' . $hash))
+			// Change File Permission
+			chmod($real_path, 0777);
+
+			// Copy Real File to Parliament DFS
+			if(!Parliament::create(self::$_username . '_' . $unique_hash . '_0', $real_path))
 				return FALSE;
 			
 			// Add new record
-			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (entity, path, type, size, hash, time, version, revision) VALUES (:entity, :path, :type, :size, :hash, :time, :version, :revision)');
+			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (path, type, size, hash, time, mime, version, revision, unique_hash) VALUES (:path, :type, :size, :hash, :time, :mime, :version, :revision, :unique_hash)');
 			$sth->execute(array(
-				':entity' => json_encode(array($_SERVER['SERVER_ADDR'])),
 				':path' => $sim_path,
 				':type' => 'file',
-				':size' => filesize(self::$_root . '/data/' . $hash),
-				':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
-				':time' => filectime(self::$_root . '/data/' . $hash),
+				':size' => filesize($real_path),
+				':hash' => hash_file('md5', $real_path),
+				':time' => filectime($real_path),
+				':mime' => mime_content_type($real_path),
 				':version' => 0,
-				':revision' => json_encode(array($hash))
+				':revision' => self::$_revert,
+				':unique_hash' => $unique_hash
 			));
 		}
 		else {
@@ -360,44 +358,36 @@ class VirFL {
 		if(!file_exists($real_path) || !self::isExists($sim_path))
 			return FALSE;
 
-		// Generate Unique-Hash for File
-		do {
-			// $hash = hash('md5', rand());
-			$hash = self::messString();
-		}
-		while(file_exists(self::$_root . '/data/' . $hash));
-		
-		// Copy Real File to VirFL
-		if(!copy($real_path, self::$_root . '/data/' . $hash))
-			return FALSE;
-		
-		$sth = self::$_record->prepare('SELECT hash,version,revision FROM files_' . self::$_username . ' WHERE path=:path');
+		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
 		$sth->execute(array(':path' => $sim_path));
 		$result = $sth->fetch();
 		
-		// Add new record
-		$result['entity'] = json_decode($result['entity'], TRUE);
-		array_unshift($result['entity'], $_SERVER['SERVER_ADDR']);
-		
-		$result['revision'] = json_decode($result['revision'], TRUE);
-		array_unshift($result['revision'], $hash);
-		
-		while(count($result['revision']) > self::$_revert) {
-			$tmp_hash = array_pop($result['revision']);
-			unlink(self::$_root . '/data/' . $tmp_hash);
-			
-			// FIXME Need delete else server's file
-			array_pop($result['entity']);
-		}
+		// if file is same
+		if(hash_file('md5', $real_path) == $result['hash'])
+			return FALSE;
 
-		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET entity=:entity, hash=:hash, time=:time, version=:version, revision=:revision WHERE path=:path');
+
+		// Need delete old version
+		// FIXME
+
+
+		// Change File Permission
+		chmod($real_path, 0777);
+
+		// Copy Real File to Parliament DFS
+		$unique_id = self::$_username . '_' . $result['unique_hash'] . '_' . ($result['version']+1);
+		if(!Parliament::create($unique_id, $real_path))
+			return FALSE;
+
+		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET size=:size, hash=:hash, time=:time, mime=:mime, version=:version, revision=:revision WHERE path=:path');
 		$sth->execute(array(
-			':entity' => json_encode($result['entity']),
 			':path' => $sim_path,
-			':hash' => hash_file('md5', self::$_root . '/data/' . $hash),
-			':time' => filectime(self::$_root . '/data/' . $hash),
+			':size' => filesize($real_path),
+			':hash' => hash_file('md5', $real_path),
+			':time' => filectime($real_path),
+			':mime' => mime_content_type($real_path),
 			':version' => $result['version']+1,
-			':revision' => json_encode($result['revision'])
+			':revision' => self::$_revert
 		));
 		
 		return TRUE;
@@ -418,40 +408,33 @@ class VirFL {
 		$sth->execute(array(':path' => $path));
 		$result = $sth->fetch();
 		
-		if(NULL == $version)
-			$version = count($result['version'])-1;
-		
-		$result['entity'] = json_decode($result['entity'], TRUE);
-		
-		// FIXME DFS temporary solution
-		if($_SERVER['SERVER_ADDR'] != $result['entity'][$version]) {
-			header('Location: http://' . $result['entity'][$version] . ':' . $_SERVER['SERVER_PORT'] . \CLx\Core\Request::uri());
-			return FALSE;
-		}
-		
 		// Check file version exists
-		if($result['version'] < $version && $version < 0)
-			return FALSE;
-		
-		$result['revision'] = json_decode($result['revision'], TRUE);
-		
+		if(NULL !== $version) {
+			if($result['version'] - $version > $result['revision'])
+				return FALSE;
+		}
+		else
+			$version = $result['version'];
+
+
 		// Normal download
 		if(NULL === $seek) {
 			// ob_end_flush();
-			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . $result['revision'][$version]));
-			readfile(self::$_root . '/data/' . $result['revision'][$version]);
+			header('Content-Type: ' . $result['mime']);
+			Parliament::read(self::$_username . '_' . $result['unique_hash'] . '_' . $version);
 			return TRUE;
 		}
 		
 		// Resume download
-		if(is_int($seek) && $seek <= filesize(self::$_root . '/data/' . $result['hash'][$version])) {
-			// ob_end_flush();
-			header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . $result['revision'][$version]));
-			$handle = fopen(self::$_root . '/data/' . $result['revision'][$version], 'rb');
-			fseek($handle, $seek);
-			fpassthru($handle);
-			return TRUE;
-		}
+		// FIXME
+		// if(is_int($seek) && $seek <= filesize(self::$_root . '/data/' . $result['hash'][$version])) {
+		// 	// ob_end_flush();
+		// 	header('Content-Type: ' . mime_content_type(self::$_root . '/data/' . $result['revision'][$version]));
+		// 	$handle = fopen(self::$_root . '/data/' . $result['revision'][$version], 'rb');
+		// 	fseek($handle, $seek);
+		// 	fpassthru($handle);
+		// 	return TRUE;
+		// }
 		
 		return FALSE;
 	}
@@ -461,56 +444,56 @@ class VirFL {
 	 * 
 	 * @param string
 	 */
-	public static function delete($path) {
-		// Check Path is exists
-		if(!self::isExists($path))
-			return FALSE;
+	// public static function delete($path) {
+	// 	// Check Path is exists
+	// 	if(!self::isExists($path))
+	// 		return FALSE;
 		
-		if('file' == self::type($path)) {
-			// Load file information
-			$sth = self::$_record->prepare('SELECT revision FROM files_' . self::$_username . ' WHERE path=:path');
-			$sth->execute(array(':path' => $path));
-			$result = $sth->fetch();
+	// 	if('file' == self::type($path)) {
+	// 		// Load file information
+	// 		$sth = self::$_record->prepare('SELECT revision FROM files_' . self::$_username . ' WHERE path=:path');
+	// 		$sth->execute(array(':path' => $path));
+	// 		$result = $sth->fetch();
 			
-			// Delete all file version
-			$result['revision'] = json_decode($result['revision'], TRUE);
-			foreach((array)$result['revision'] as $hash)
-				unlink(self::$_root . '/data/' . $hash);
+	// 		// Delete all file version
+	// 		$result['revision'] = json_decode($result['revision'], TRUE);
+	// 		foreach((array)$result['revision'] as $hash)
+	// 			unlink(self::$_root . '/data/' . $hash);
 			
-			// Delete file record
-			$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
-			$sth->execute(array(':path' => $path));
-		}
-		else {
-			if('/' !== $path) {
-				// Delete directory record
-				$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
-				$sth->execute(array(':path' => $path));
+	// 		// Delete file record
+	// 		$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
+	// 		$sth->execute(array(':path' => $path));
+	// 	}
+	// 	else {
+	// 		if('/' !== $path) {
+	// 			// Delete directory record
+	// 			$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
+	// 			$sth->execute(array(':path' => $path));
 				
-				$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
-			}
-			else
-				$regex_path = '^\/.+';
+	// 			$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
+	// 		}
+	// 		else
+	// 			$regex_path = '^\/.+';
 			
-			// Load all files record
-			$sth = self::$_record->prepare('SELECT hash FROM files_' . self::$_username . ' WHERE path=:path, type="file"');
-			$sth->execute(array(':path' => $path));
+	// 		// Load all files record
+	// 		$sth = self::$_record->prepare('SELECT hash FROM files_' . self::$_username . ' WHERE path=:path, type="file"');
+	// 		$sth->execute(array(':path' => $path));
 			
-			// Delete all file version
-			while($row = $sth->fetch()) {
-				$result['revision'] = json_decode($result['revision'], TRUE);
-				foreach($result['revision'] as $hash)
-					unlink(self::$_root . '/data/' . $hash);
-			}
+	// 		// Delete all file version
+	// 		while($row = $sth->fetch()) {
+	// 			$result['revision'] = json_decode($result['revision'], TRUE);
+	// 			foreach($result['revision'] as $hash)
+	// 				unlink(self::$_root . '/data/' . $hash);
+	// 		}
 			
-			// Delete all file record
-			$sql = sprintf('DELETE FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
-			$sth = self::$_record->prepare($sql);
-			$sth->execute();
-		}
+	// 		// Delete all file record
+	// 		$sql = sprintf('DELETE FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
+	// 		$sth = self::$_record->prepare($sql);
+	// 		$sth->execute();
+	// 	}
 		
-		return TRUE;
-	}
+	// 	return TRUE;
+	// }
 	
 	/**
 	 * Check type

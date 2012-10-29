@@ -20,7 +20,8 @@ class FileinfoController extends \CLx\Core\Controller {
 
 		// Load Library
 		\CLx\Core\Loader::library('StatusCode');
-		\CLx\Core\Loader::library('VirFL');
+		\CLx\Core\Loader::library('Parliament');
+		\CLx\Core\Loader::library('VirDFS');
 		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
@@ -42,8 +43,8 @@ class FileinfoController extends \CLx\Core\Controller {
 			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize VirFL
-			VirFL::init(array(
+			// Initialize VirDFS
+			VirDFS::init(array(
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
@@ -58,12 +59,12 @@ class FileinfoController extends \CLx\Core\Controller {
 			$path = $this->file_model->parsePath($segments);
 
 			// Check file is exists
-			if(!VirFL::isExists($path))
+			if(!VirDFS::isExists($path))
 				StatusCode::setStatus(3004);
 			
 			// Load file or list
 			if(!StatusCode::isError())
-				CLx\Core\Response::toJSON(VirFL::info($path));
+				CLx\Core\Response::toJSON(VirDFS::info($path));
 		}
 		
 		if(StatusCode::isError())

@@ -20,7 +20,8 @@ class FileController extends \CLx\Core\Controller {
 
 		// Load Library
 		\CLx\Core\Loader::library('StatusCode');
-		\CLx\Core\Loader::library('VirFL');
+		\CLx\Core\Loader::library('Parliament');
+		\CLx\Core\Loader::library('VirDFS');
 		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
@@ -35,7 +36,7 @@ class FileController extends \CLx\Core\Controller {
 		$params = \CLx\Core\Request::params();
 		
 		$token = isset($headers['X-Rnfs-Token']) ? $headers['X-Rnfs-Token'] : NULL;
-		$version = isset($params['version']) ? $params['version'] : 0;
+		$version = isset($params['version']) ? $params['version'] : NULL;
 		
 		if($username = $this->auth_model->updateToken($token)) {
 			// Database Disconnect
@@ -43,8 +44,8 @@ class FileController extends \CLx\Core\Controller {
 			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize VirFL
-			VirFL::init(array(
+			// Initialize VirDFS
+			VirDFS::init(array(
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
@@ -59,15 +60,15 @@ class FileController extends \CLx\Core\Controller {
 			$path = $this->file_model->parsePath($segments);
 
 			// Check file is exists
-			if(!VirFL::isExists($path))
+			if(!VirDFS::isExists($path))
 				StatusCode::setStatus(3004);
 			
 			// Load file or list
 			if(!StatusCode::isError()) {
-				if(VirFL::isDir($path))
-					CLx\Core\Response::toJSON(VirFL::index($path));
+				if(VirDFS::isDir($path))
+					CLx\Core\Response::toJSON(VirDFS::index($path));
 				else
-					VirFL::read($path, NULL, $version);
+					VirDFS::read($path, NULL, $version);
 			}
 		}
 		
@@ -90,8 +91,8 @@ class FileController extends \CLx\Core\Controller {
 			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize VirFL
-			VirFL::init(array(
+			// Initialize VirDFS
+			VirDFS::init(array(
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
@@ -106,7 +107,7 @@ class FileController extends \CLx\Core\Controller {
 			$path = $this->file_model->parsePath($segments);
 			
 			// Check file is exists
-			if(VirFL::isExists($path))
+			if(VirDFS::isExists($path))
 				StatusCode::setStatus(3007);
 				
 			if(NULL !== $files && !StatusCode::isError()) {
@@ -115,12 +116,12 @@ class FileController extends \CLx\Core\Controller {
 					StatusCode::setStatus(3005);
 				
 				// Check capacity used
-				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
+				if($files['size'] + VirDFS::getUsed() > $this->file_config['capacity'])
 					StatusCode::setStatus(4000);
 				
 				if(!StatusCode::isError()) {
-					// VirFL Create File
-					if(!VirFL::create($path, $files['tmp_name']))
+					// VirDFS Create File
+					if(!VirDFS::create($path, $files['tmp_name']))
 						StatusCode::setStatus(3006);
 				}
 
@@ -145,7 +146,7 @@ class FileController extends \CLx\Core\Controller {
 			}
 			elseif(!StatusCode::isError()) {
 				// Create New Dir
-				if(!VirFL::create($path))
+				if(!VirDFS::create($path))
 					StatusCode::setStatus(3006);
 				
 				if(!StatusCode::isError()) {
@@ -181,8 +182,8 @@ class FileController extends \CLx\Core\Controller {
 			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize VirFL
-			VirFL::init(array(
+			// Initialize VirDFS
+			VirDFS::init(array(
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
@@ -197,7 +198,7 @@ class FileController extends \CLx\Core\Controller {
 			$path = $this->file_model->parsePath($segments);
 			
 			// Check Old Path
-			if(!VirFL::isExists($path))
+			if(!VirDFS::isExists($path))
 				StatusCode::setStatus(3004);
 			
 			if(NULL !== $files && !StatusCode::isError()) {
@@ -206,17 +207,17 @@ class FileController extends \CLx\Core\Controller {
 					StatusCode::setStatus(3005);
 				
 				// Check capacity used
-				if($files['size'] + VirFL::getUsed() > $this->file_config['capacity'])
+				if($files['size'] + VirDFS::getUsed() > $this->file_config['capacity'])
 					StatusCode::setStatus(4000);
 				
 				if(!StatusCode::isError()) {
-					// VirFL Create File
-					if(!VirFL::update($path, $files['tmp_name']))
+					// VirDFS Create File
+					if(!VirDFS::update($path, $files['tmp_name']))
 						StatusCode::setStatus(3006);
 				}
 				
 				if(!StatusCode::isError()) {
-					$info = VirFL::index($path);
+					$info = VirDFS::index($path);
 					
 					\CLx\Core\Event::trigger('file_change', array(
 						'user' => $username,
@@ -243,12 +244,12 @@ class FileController extends \CLx\Core\Controller {
 				$new_path = $this->file_model->parsePath(explode('/', trim($new_path, '/')));
 				
 				// Check Old Path and New Path
-				if(NULL !== $new_path && VirFL::isExists($new_path))
+				if(NULL !== $new_path && VirDFS::isExists($new_path))
 					StatusCode::setStatus(3007);
 				
 				if(!StatusCode::isError()) {
 					// Move path
-					if(!VirFL::move($path, $new_path))
+					if(!VirDFS::move($path, $new_path))
 						StatusCode::setStatus(3006);
 				}
 				
@@ -258,7 +259,7 @@ class FileController extends \CLx\Core\Controller {
 						'token' => $token,
 						'send' => array(
 							'action' => 'rename',
-							'type' => VirFL::type($new_path),
+							'type' => VirDFS::type($new_path),
 							'path' => $path,
 							'new_path' => $new_path
 						)
@@ -285,8 +286,8 @@ class FileController extends \CLx\Core\Controller {
 			
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Initialize VirFL
-			VirFL::init(array(
+			// Initialize VirDFS
+			VirDFS::init(array(
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
@@ -301,13 +302,13 @@ class FileController extends \CLx\Core\Controller {
 			$path = $this->file_model->parsePath($segments);
 			
 			// Check file is exists
-			if(!VirFL::isExists($path))
+			if(!VirDFS::isExists($path))
 				StatusCode::setStatus(3004);
 			
 			// Load file or list
 			if(!StatusCode::isError()) {
-				if(VirFL::isDir($path)) {
-					if(VirFL::delete($path))
+				if(VirDFS::isDir($path)) {
+					if(VirDFS::delete($path))
 						\CLx\Core\Event::trigger('file_change', array(
 							'user' => $username,
 							'token' => $token,
@@ -321,7 +322,7 @@ class FileController extends \CLx\Core\Controller {
 						StatusCode::setStatus(3006);
 				}
 				else {
-					if(VirFL::delete($path))
+					if(VirDFS::delete($path))
 						\CLx\Core\Event::trigger('file_change', array(
 							'user' => $username,
 							'token' => $token,

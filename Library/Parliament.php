@@ -1,7 +1,13 @@
 <?php
-
-Parliament::setHost('140.126.130.226');
-Parliament::isExists('z');
+/**
+ * Parliament DFS Library
+ * 
+ * @package		Parliament
+ * @author		ScarWu
+ * @copyright	Copyright (c) 2012, ScarWu (http://scar.simcz.tw/)
+ * @license		http://opensource.org/licenses/MIT Open Source Initiative OSI - The MIT License (MIT):Licensing
+ * @link		http://github.com/scarwu/RNFileSystem
+ */
 
 class Parliament {
 
@@ -49,7 +55,7 @@ class Parliament {
 	/**
 	 * Create DFS File
 	 */
-	public static function create($unique_id) {
+	public static function create($unique_id, $source) {
 		$json = json_encode(array(
 			'action' => 'create',
 			'unique_id' => $unique_id,

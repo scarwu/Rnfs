@@ -46,9 +46,10 @@ class UserController extends \CLx\Core\Controller {
 		if(!StatusCode::isError()) {
 			define('FILE_LOCATE', $this->file_config['locate'] . $username);
 			
-			// Load VirFL and Initialize
-			\CLx\Core\Loader::Library('VirFL');
-			VirFL::init(array(
+			// Load VirDFS and Initialize
+			\CLx\Core\Loader::library('Parliament');
+			\CLx\Core\Loader::library('VirDFS');
+			VirDFS::init(array(
 				'username' => $username,
 				'root' => FILE_LOCATE,
 				'revert' => $this->file_config['revert'],
@@ -69,7 +70,7 @@ class UserController extends \CLx\Core\Controller {
 				'email' => $result[0]['email'],
 				'upload_limit' => $this->file_config['upload_limit'],
 				'capacity' => $this->file_config['capacity'],
-				'used' => VirFL::getUsed()
+				'used' => VirDFS::getUsed()
 			));
 		}
 		else
