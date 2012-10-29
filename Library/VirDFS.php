@@ -1,6 +1,6 @@
 <?php
 /**
- * RNFileSystem Virtual File Layer
+ * RNFileSystem Virtual DFS
  * 
  * @package		RESTful Network File System
  * @author		ScarWu
@@ -80,12 +80,13 @@ class VirFL {
 		self::$_record->query(
 			'CREATE TABLE IF NOT EXISTS files_' . self::$_username . ' (' .
 				'path TEXT NOT NULL,' .
-				'type text NOT NULL,' .
+				'type TEXT NOT NULL,' .
 				'size INT(10),' .
 				'hash TEXT,' .
 				'time INT(10),' .
 				'version INT(10),' .
-				'revision TEXT' .
+				'revision INT(10)' .
+				'unique_id VARCHAR(128)' .
 			') ENGINE=INNODB DEFAULT CHARSET=utf8;'
 		);
 		
