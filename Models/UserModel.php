@@ -69,14 +69,6 @@ class UserModel extends \CLx\Core\Model {
 			return FALSE;
 		}
 
-		// Check update success
-		$sql = 'SELECT * FROM accounts WHERE username=:un AND password=:opw';
-		$params = array(':un' => $username, ':opw' => $old_password);
-		if(0 == count($this->_db->query($sql, $params)->asArray())) {
-			StatusCode::setStatus(3002);
-			return FALSE;
-		}
-
 		// Update password
 		$sql = 'UPDATE accounts SET password=:npw WHERE username=:un AND password=:opw';
 		$params = array(
@@ -87,9 +79,7 @@ class UserModel extends \CLx\Core\Model {
 		$this->_db->query($sql, $params);
 		
 		// Check update success
-		$sql = 'SELECT * FROM accounts WHERE username=:un AND password=:npw';
-		$params = array(':un' => $username, ':npw' => $new_password);
-		if(0 == count($this->_db->query($sql, $params)->asArray())) {
+		if(0 == count($this->_db->query($sql, $params)->count())) {
 			StatusCode::setStatus(3002);
 			return FALSE;
 		}
@@ -134,7 +124,7 @@ class UserModel extends \CLx\Core\Model {
 	}
 
 	public function getUserUseUsername($username) {
-		$sql = 'SELECT * FROM accounts WHERE username=:un';
+		$sql = 'SELECT email FROM accounts WHERE username=:un';
 		$params = array(':un' => $username);
 		return $this->_db->query($sql, $params)->asArray();
 	}

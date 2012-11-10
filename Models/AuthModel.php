@@ -113,7 +113,7 @@ class AuthModel extends \CLx\Core\Model {
 	 */
 	// Login By username and password
 	private function loginByUsernameAndPassword($username, $password) {
-		$sql = 'SELECT * FROM accounts WHERE username=:un AND password=:pw';
+		$sql = 'SELECT username FROM accounts WHERE username=:un AND password=:pw';
 		$params = array(':un' => $username, ':pw' => hash('md5', $password));
 		return 1 == count($this->_db->query($sql, $params)->asArray()) ? TRUE : FALSE;
 	}
@@ -121,11 +121,11 @@ class AuthModel extends \CLx\Core\Model {
 	// Login By token
 	private function loginByToken($token, $time = NULL) {
 		if(NULL == $time) {
-			$sql = 'SELECT * FROM tokenlist WHERE token=:tk';
+			$sql = 'SELECT timestamp FROM tokenlist WHERE token=:tk';
 			$params = array(':tk' => $token);
 		}
 		else {
-			$sql = 'SELECT * FROM tokenlist WHERE token=:tk AND timestamp>=:ti';
+			$sql = 'SELECT timestamp FROM tokenlist WHERE token=:tk AND timestamp>=:ti';
 			$params = array(':tk' => $token, ':ti' => $time);
 		}
 		
