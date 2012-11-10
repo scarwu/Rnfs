@@ -25,9 +25,25 @@ class FileinfoController extends \CLx\Core\Controller {
 		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
-		$this->file_model = \CLx\Core\Loader::model('File');
 	}
 	
+	/**
+	 * Parse Path
+	 * 
+	 * @param	string $segments
+	 * @return	string $path
+	 */
+	private function _parsePath($segments = NULL) {
+		$blacklist = array('\\', '/', ':', '*', '?', '"', '<', '>', '|');
+		$path = '/';
+		foreach((array)$segments as $value)
+			if($value != '.' || $value != '..') {
+				$value = str_replace($blacklist, '', $value);
+				$path .= $path == '/' ? $value : '/' . $value;
+			}
+		return $path;
+	}
+
 	/**
 	 * Get File or List
 	 */
@@ -56,7 +72,7 @@ class FileinfoController extends \CLx\Core\Controller {
 				'name' => $this->database_config['name']
 			));
 			
-			$path = $this->file_model->parsePath($segments);
+			$path = $this->_parsePath($segments);
 
 			// Check file is exists
 			if(!VirDFS::isExists($path))

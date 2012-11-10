@@ -25,9 +25,25 @@ class FileController extends \CLx\Core\Controller {
 		
 		// Load Model
 		$this->auth_model = \CLx\Core\Loader::model('Auth');
-		$this->file_model = \CLx\Core\Loader::model('File');
 	}
 	
+	/**
+	 * Parse Path
+	 * 
+	 * @param	string $segments
+	 * @return	string $path
+	 */
+	private function _parsePath($segments = NULL) {
+		$blacklist = array('\\', '/', ':', '*', '?', '"', '<', '>', '|');
+		$path = '/';
+		foreach((array)$segments as $value)
+			if($value != '.' || $value != '..') {
+				$value = str_replace($blacklist, '', $value);
+				$path .= $path == '/' ? $value : '/' . $value;
+			}
+		return $path;
+	}
+
 	/**
 	 * Get File or List
 	 */
@@ -57,7 +73,7 @@ class FileController extends \CLx\Core\Controller {
 				'name' => $this->database_config['name']
 			));
 			
-			$path = $this->file_model->parsePath($segments);
+			$path = $this->_parsePath($segments);
 
 			// Check file is exists
 			if(!VirDFS::isExists($path))
@@ -104,7 +120,7 @@ class FileController extends \CLx\Core\Controller {
 				'name' => $this->database_config['name']
 			));
 			
-			$path = $this->file_model->parsePath($segments);
+			$path = $this->_parsePath($segments);
 			
 			// Check file is exists
 			if(VirDFS::isExists($path))
@@ -195,7 +211,7 @@ class FileController extends \CLx\Core\Controller {
 				'name' => $this->database_config['name']
 			));
 			
-			$path = $this->file_model->parsePath($segments);
+			$path = $this->_parsePath($segments);
 			
 			// Check Old Path
 			if(!VirDFS::isExists($path))
@@ -241,7 +257,7 @@ class FileController extends \CLx\Core\Controller {
 				$params = \CLx\Core\Request::params();
 				
 				$new_path = isset($params['path']) ? $params['path'] : NULL;
-				$new_path = $this->file_model->parsePath(explode('/', trim($new_path, '/')));
+				$new_path = $this->_parsePath(explode('/', trim($new_path, '/')));
 				
 				// Check Old Path and New Path
 				if(NULL !== $new_path && VirDFS::isExists($new_path))
@@ -299,7 +315,7 @@ class FileController extends \CLx\Core\Controller {
 				'name' => $this->database_config['name']
 			));
 			
-			$path = $this->file_model->parsePath($segments);
+			$path = $this->_parsePath($segments);
 			
 			// Check file is exists
 			if(!VirDFS::isExists($path))

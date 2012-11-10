@@ -115,7 +115,7 @@ class VirDFS {
 	public static function index($path = '/') {
 		if('/' === $path) {
 			$list = array();
-			$sth = self::$_record->query('SELECT * FROM files_' . self::$_username);
+			$sth = self::$_record->query('SELECT size,hash,time,mime,version FROM files_' . self::$_username);
 			while($result = $sth->fetch()) {
 				if('file' == $result['type']) {
 					$list[$result['path']] = array(
@@ -137,7 +137,7 @@ class VirDFS {
 			
 			$list = NULL;
 			
-			$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
+			$sth = self::$_record->prepare('SELECT size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path=:path');
 			$sth->execute(array(':path' => $path));
 			$result = $sth->fetch();
 			
@@ -154,7 +154,7 @@ class VirDFS {
 				$list[$result['path']] = array('type' => 'dir');
 			
 			$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
-			$sql = sprintf('SELECT * FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
+			$sql = sprintf('SELECT size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
 			$sth = self::$_record->prepare($sql);
 			$sth->execute();
 			
@@ -165,6 +165,7 @@ class VirDFS {
 						'size' => $result['size'],
 						'hash' => $result['hash'],
 						'time' => $result['time'],
+						'mime' => $result['mime'],
 						'version' => $result['version']
 					);
 				else
@@ -246,11 +247,11 @@ class VirDFS {
 			
 			// Change sub directory to new path
 			$regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
-			while($row = $sth->fetch()) {
-				if(preg_match($regex_path, $row['path'], $match)) {
+			while($result = $sth->fetch()) {
+				if(preg_match($regex_path, $result['path'], $match)) {
 					$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET path=:new_path WHERE path=:path');
 					$sth->execute(array(
-						':path' => $row['path'],
+						':path' => $result['path'],
 						':new_path' => $sim_dest . '/' . $match[1]
 					));
 				}
@@ -404,7 +405,7 @@ class VirDFS {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
+		$sth = self::$_record->prepare('SELECT version,revision,mime,unique_hash FROM files_' . self::$_username . ' WHERE path=:path');
 		$sth->execute(array(':path' => $path));
 		$result = $sth->fetch();
 		
@@ -444,56 +445,54 @@ class VirDFS {
 	 * 
 	 * @param string
 	 */
-	// public static function delete($path) {
-	// 	// Check Path is exists
-	// 	if(!self::isExists($path))
-	// 		return FALSE;
+	public static function delete($path) {
+		// Check Path is exists
+		if(!self::isExists($path))
+			return FALSE;
 		
-	// 	if('file' == self::type($path)) {
-	// 		// Load file information
-	// 		$sth = self::$_record->prepare('SELECT revision FROM files_' . self::$_username . ' WHERE path=:path');
-	// 		$sth->execute(array(':path' => $path));
-	// 		$result = $sth->fetch();
+		if('file' == self::type($path)) {
+			// Load file information
+			$sth = self::$_record->prepare('SELECT version,revision,unique_hash FROM files_' . self::$_username . ' WHERE path=:path');
+			$sth->execute(array(':path' => $path));
+			$result = $sth->fetch();
 			
-	// 		// Delete all file version
-	// 		$result['revision'] = json_decode($result['revision'], TRUE);
-	// 		foreach((array)$result['revision'] as $hash)
-	// 			unlink(self::$_root . '/data/' . $hash);
+			// Delete all file version
+			for($index = $result['version'];$index >= ($result['version']-$result['revision']), $index >= 0;$index--)
+				Parliament::delete(self::$_username . '_' . $result['unique_hash'] . '_' . $index);
 			
-	// 		// Delete file record
-	// 		$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
-	// 		$sth->execute(array(':path' => $path));
-	// 	}
-	// 	else {
-	// 		if('/' !== $path) {
-	// 			// Delete directory record
-	// 			$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
-	// 			$sth->execute(array(':path' => $path));
+			// Delete file record
+			$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
+			$sth->execute(array(':path' => $path));
+		}
+		else {
+			if('/' !== $path) {
+				// Delete directory record
+				$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
+				$sth->execute(array(':path' => $path));
 				
-	// 			$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
-	// 		}
-	// 		else
-	// 			$regex_path = '^\/.+';
+				$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
+			}
+			else
+				$regex_path = '^\/.+';
 			
-	// 		// Load all files record
-	// 		$sth = self::$_record->prepare('SELECT hash FROM files_' . self::$_username . ' WHERE path=:path, type="file"');
-	// 		$sth->execute(array(':path' => $path));
+			// Load all files record
+			$sth = self::$_record->prepare('SELECT verswion,revision,unique_hash FROM files_' . self::$_username . ' WHERE path=:path, type="file"');
+			$sth->execute(array(':path' => $path));
 			
-	// 		// Delete all file version
-	// 		while($row = $sth->fetch()) {
-	// 			$result['revision'] = json_decode($result['revision'], TRUE);
-	// 			foreach($result['revision'] as $hash)
-	// 				unlink(self::$_root . '/data/' . $hash);
-	// 		}
+			// Delete all file version
+			while($result = $sth->fetch()) {
+				for($index = $result['version'];$index >= ($result['version']-$result['revision']), $index >= 0;$index--)
+					Parliament::delete(self::$_username . '_' . $result['unique_hash'] . '_' . $index);
+			}
 			
-	// 		// Delete all file record
-	// 		$sql = sprintf('DELETE FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
-	// 		$sth = self::$_record->prepare($sql);
-	// 		$sth->execute();
-	// 	}
+			// Delete all file record
+			$sql = sprintf('DELETE FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
+			$sth = self::$_record->prepare($sql);
+			$sth->execute();
+		}
 		
-	// 	return TRUE;
-	// }
+		return TRUE;
+	}
 	
 	/**
 	 * Check type
@@ -504,7 +503,7 @@ class VirDFS {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
+		$sth = self::$_record->prepare('SELECT type,size,hash,time,version FROM files_' . self::$_username . ' WHERE path=:path');
 		$sth->execute(array(':path' => $path));
 		$result = $sth->fetch();
 		
@@ -565,11 +564,10 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isExists($path) {
-		$sth = self::$_record->prepare('SELECT COUNT(path) FROM files_' . self::$_username . ' WHERE path=:path');
+		$sth = self::$_record->prepare('SELECT path FROM files_' . self::$_username . ' WHERE path=:path');
 		$sth->execute(array(':path' => $path));
-		$result = $sth->fetch();
 		
-		return $result[0] != 0;
+		return count($sth->fetchAll()) != 0;
 	}
 	
 	/**

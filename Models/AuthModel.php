@@ -22,11 +22,6 @@ class AuthModel extends \CLx\Core\Model {
 		\CLx\Core\Loader::library('StatusCode');
 	}
 
-	public function test() {
-		$sql = 'SELECT * FROM accounts';
-		return $this->_db->query($sql)->asArray();
-	}
-
 	// Token Generator
 	public function genToken($username, $password) {
 		if(NULL == $username) {
