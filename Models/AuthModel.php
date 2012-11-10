@@ -121,11 +121,11 @@ class AuthModel extends \CLx\Core\Model {
 	// Login By token
 	private function loginByToken($token, $time = NULL) {
 		if(NULL == $time) {
-			$sql = 'SELECT timestamp FROM tokenlist WHERE token=:tk';
+			$sql = 'SELECT * FROM tokenlist WHERE token=:tk';
 			$params = array(':tk' => $token);
 		}
 		else {
-			$sql = 'SELECT timestamp FROM tokenlist WHERE token=:tk AND timestamp>=:ti';
+			$sql = 'SELECT * FROM tokenlist WHERE token=:tk AND timestamp>=:ti';
 			$params = array(':tk' => $token, ':ti' => $time);
 		}
 		

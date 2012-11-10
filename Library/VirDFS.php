@@ -115,7 +115,7 @@ class VirDFS {
 	public static function index($path = '/') {
 		if('/' === $path) {
 			$list = array();
-			$sth = self::$_record->query('SELECT size,hash,time,mime,version FROM files_' . self::$_username);
+			$sth = self::$_record->query('SELECT path,type,size,hash,time,mime,version FROM files_' . self::$_username);
 			while($result = $sth->fetch()) {
 				if('file' == $result['type']) {
 					$list[$result['path']] = array(
@@ -137,7 +137,7 @@ class VirDFS {
 			
 			$list = NULL;
 			
-			$sth = self::$_record->prepare('SELECT size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path=:path');
+			$sth = self::$_record->prepare('SELECT path,type,size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path=:path');
 			$sth->execute(array(':path' => $path));
 			$result = $sth->fetch();
 			
@@ -154,7 +154,7 @@ class VirDFS {
 				$list[$result['path']] = array('type' => 'dir');
 			
 			$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
-			$sql = sprintf('SELECT size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
+			$sql = sprintf('SELECT path,type,size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path REGEXP "%s"', $regex_path);
 			$sth = self::$_record->prepare($sql);
 			$sth->execute();
 			

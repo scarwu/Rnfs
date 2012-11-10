@@ -124,7 +124,7 @@ class UserModel extends \CLx\Core\Model {
 	}
 
 	public function getUserUseUsername($username) {
-		$sql = 'SELECT email FROM accounts WHERE username=:un';
+		$sql = 'SELECT username,email FROM accounts WHERE username=:un';
 		$params = array(':un' => $username);
 		return $this->_db->query($sql, $params)->asArray();
 	}
