@@ -71,6 +71,7 @@ class VirDFS {
 		// Create files table
 		self::$_record->query(
 			'CREATE TABLE IF NOT EXISTS files_' . self::$_username . ' (' .
+				'id varchar(32) NOT NULL,' .
 				'path TEXT NOT NULL,' .
 				'type VARCHAR(4) NOT NULL,' .
 				'size INT(10),' .
@@ -79,12 +80,13 @@ class VirDFS {
 				'mime VARCHAR(16),' .
 				'version INT(10),' .
 				'revision INT(10),' .
-				'unique_hash VARCHAR(16)' .
+				'unique_hash VARCHAR(16),' .
+				'PRIMARY KEY (id)' .
 			') ENGINE=INNODB DEFAULT CHARSET=utf8;'
 		);
 		
 		if(!self::isExists('/')) {
-			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (path, type) VALUES ("/", "dir")');
+			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (id, path, type) VALUES ("6666cd76f96956469e7be39d750cc7d9", "/", "dir")');
 			$sth->execute(array(':username' => self::$_username));
 		}
 	}
@@ -137,8 +139,8 @@ class VirDFS {
 			
 			$list = NULL;
 			
-			$sth = self::$_record->prepare('SELECT path,type,size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE path=:path');
-			$sth->execute(array(':path' => $path));
+			$sth = self::$_record->prepare('SELECT path,type,size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE id=:id');
+			$sth->execute(array(':id' => md5($path)));
 			$result = $sth->fetch();
 			
 			if('file' == $result['type'])
@@ -191,8 +193,8 @@ class VirDFS {
 	// 		return FALSE;
 		
 	// 	// Check File version is exists
-	// 	$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
-	// 	$sth->execute(array(':path' => $path));
+	// 	$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE id=:id');
+	// 	$sth->execute(array(':id' => md5($path)));
 	// 	$result = $sth->fetch();
 		
 	// 	// Check file version exists
@@ -207,9 +209,9 @@ class VirDFS {
 	// 		unlink(self::$_root . '/data/' . $hash);
 	// 	}
 		
-	// 	$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET version=:version, revision=:revision WHERE path=:path');
+	// 	$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET version=:version, revision=:revision WHERE id=:id');
 	// 	$sth->execute(array(
-	// 		':path' => $path,
+	// 		':id' => md5($path),
 	// 		':version' => $version,
 	// 		':revision' => json_encode($result['revision'])
 	// 	));
@@ -229,9 +231,9 @@ class VirDFS {
 			return FALSE;
 		
 		// Change old path to new path
-		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET path=:new_path WHERE path=:path');
+		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET path=:new_path WHERE id=:id');
 		$sth->execute(array(
-			':path' => $sim_src,
+			':id' => md5($sim_src),
 			':new_path' => $sim_dest
 		));
 		
@@ -249,9 +251,9 @@ class VirDFS {
 			$regex_path = sprintf('/^\/%s\/(.*)/', str_replace('/', '\/', trim($sim_src, '/')));
 			while($result = $sth->fetch()) {
 				if(preg_match($regex_path, $result['path'], $match)) {
-					$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET path=:new_path WHERE path=:path');
+					$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET path=:new_path WHERE id=:id');
 					$sth->execute(array(
-						':path' => $result['path'],
+						':id' => md5($result['path']),
 						':new_path' => $sim_dest . '/' . $match[1]
 					));
 				}
@@ -290,8 +292,9 @@ class VirDFS {
 				return FALSE;
 			
 			// Add new record
-			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (path, type, size, hash, time, mime, version, revision, unique_hash) VALUES (:path, :type, :size, :hash, :time, :mime, :version, :revision, :unique_hash)');
+			$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (id, path, type, size, hash, time, mime, version, revision, unique_hash) VALUES (:id, :path, :type, :size, :hash, :time, :mime, :version, :revision, :unique_hash)');
 			$sth->execute(array(
+				':id' => md5($sim_path),
 				':path' => $sim_path,
 				':type' => 'file',
 				':size' => filesize($real_path),
@@ -334,8 +337,9 @@ class VirDFS {
 			$full_path .= '/' . $segment;
 			if(!self::isExists($full_path)) {
 				// Add new record
-				$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (path, type) VALUES (:path, :type)');
+				$sth = self::$_record->prepare('INSERT INTO files_' . self::$_username . ' (id, path, type) VALUES (:id, :path, :type)');
 				$sth->execute(array(
+					':id' => md5($full_path),
 					':path' => $full_path,
 					':type' => 'dir'
 				));
@@ -359,8 +363,8 @@ class VirDFS {
 		if(!file_exists($real_path) || !self::isExists($sim_path))
 			return FALSE;
 
-		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE path=:path');
-		$sth->execute(array(':path' => $sim_path));
+		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE id=:id');
+		$sth->execute(array(':id' => md5($sim_path)));
 		$result = $sth->fetch();
 		
 		// if file is same
@@ -380,9 +384,9 @@ class VirDFS {
 		if(!Parliament::create($unique_id, $real_path))
 			return FALSE;
 
-		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET size=:size, hash=:hash, time=:time, mime=:mime, version=:version, revision=:revision WHERE path=:path');
+		$sth = self::$_record->prepare('UPDATE files_' . self::$_username . ' SET size=:size, hash=:hash, time=:time, mime=:mime, version=:version, revision=:revision WHERE id=:id');
 		$sth->execute(array(
-			':path' => $sim_path,
+			':id' => md5($sim_path),
 			':size' => filesize($real_path),
 			':hash' => hash_file('md5', $real_path),
 			':time' => filectime($real_path),
@@ -405,8 +409,8 @@ class VirDFS {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		$sth = self::$_record->prepare('SELECT version,revision,mime,unique_hash FROM files_' . self::$_username . ' WHERE path=:path');
-		$sth->execute(array(':path' => $path));
+		$sth = self::$_record->prepare('SELECT version,revision,mime,unique_hash FROM files_' . self::$_username . ' WHERE id=:id');
+		$sth->execute(array(':id' => md5($path)));
 		$result = $sth->fetch();
 		
 		// Check file version exists
@@ -452,8 +456,8 @@ class VirDFS {
 		
 		if('file' == self::type($path)) {
 			// Load file information
-			$sth = self::$_record->prepare('SELECT version,revision,unique_hash FROM files_' . self::$_username . ' WHERE path=:path');
-			$sth->execute(array(':path' => $path));
+			$sth = self::$_record->prepare('SELECT version,revision,unique_hash FROM files_' . self::$_username . ' WHERE id=:id');
+			$sth->execute(array(':id' => md5($path)));
 			$result = $sth->fetch();
 			
 			// Delete all file version
@@ -461,14 +465,14 @@ class VirDFS {
 				Parliament::delete(self::$_username . '_' . $result['unique_hash'] . '_' . $index);
 			
 			// Delete file record
-			$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
-			$sth->execute(array(':path' => $path));
+			$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE id=:id');
+			$sth->execute(array(':id' => md5($path)));
 		}
 		else {
 			if('/' !== $path) {
 				// Delete directory record
-				$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE path=:path');
-				$sth->execute(array(':path' => $path));
+				$sth = self::$_record->prepare('DELETE FROM files_' . self::$_username . ' WHERE id=:id');
+				$sth->execute(array(':id' => md5($path)));
 				
 				$regex_path = sprintf('^\/%s\/', str_replace('/', '\/', trim($path, '/')));
 			}
@@ -476,8 +480,8 @@ class VirDFS {
 				$regex_path = '^\/.+';
 			
 			// Load all files record
-			$sth = self::$_record->prepare('SELECT verswion,revision,unique_hash FROM files_' . self::$_username . ' WHERE path=:path, type="file"');
-			$sth->execute(array(':path' => $path));
+			$sth = self::$_record->prepare('SELECT version,revision,unique_hash FROM files_' . self::$_username . ' WHERE id=:id AND type="file"');
+			$sth->execute(array(':id' => md5($path)));
 			
 			// Delete all file version
 			while($result = $sth->fetch()) {
@@ -495,7 +499,7 @@ class VirDFS {
 	}
 	
 	/**
-	 * Check type
+	 * Get file information
 	 * 
 	 * @param string
 	 */
@@ -503,8 +507,8 @@ class VirDFS {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		$sth = self::$_record->prepare('SELECT type,size,hash,time,version FROM files_' . self::$_username . ' WHERE path=:path');
-		$sth->execute(array(':path' => $path));
+		$sth = self::$_record->prepare('SELECT type,size,hash,time,version FROM files_' . self::$_username . ' WHERE id=:id');
+		$sth->execute(array(':id' => md5($path)));
 		$result = $sth->fetch();
 		
 		if('file' == $result['type'])
@@ -527,8 +531,8 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function type($path) {
-		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE path=:path');
-		$sth->execute(array(':path' => $path));
+		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE id=:id');
+		$sth->execute(array(':id' => md5($path)));
 		$result = $sth->fetch();
 		
 		return isset($result['type']) ? $result['type'] : NULL;
@@ -540,8 +544,8 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isDir($path) {
-		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE path=:path AND type="dir"');
-		$sth->execute(array(':path' => $path));
+		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE id=:id AND type="dir"');
+		$sth->execute(array(':id' => md5($path)));
 		
 		return $sth->fetch() != NULL;
 	}
@@ -552,8 +556,8 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isFile($path) {
-		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE path=:path AND type="file"');
-		$sth->execute(array(':path' => $path));
+		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE id=:id AND type="file"');
+		$sth->execute(array(':id' => md5($path)));
 		
 		return $sth->fetch() != NULL;
 	}
@@ -564,8 +568,8 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isExists($path) {
-		$sth = self::$_record->prepare('SELECT path FROM files_' . self::$_username . ' WHERE path=:path');
-		$sth->execute(array(':path' => $path));
+		$sth = self::$_record->prepare('SELECT path FROM files_' . self::$_username . ' WHERE id=:id');
+		$sth->execute(array(':id' => md5($path)));
 		
 		return count($sth->fetchAll()) != 0;
 	}
@@ -575,7 +579,7 @@ class VirDFS {
 	 * 
 	 * @param boolean / integer
 	 */
-	public static function isError($path) {
+	public static function isError() {
 		$result = $_is_error;
 		self::$_is_error = false;
 		return $result;
