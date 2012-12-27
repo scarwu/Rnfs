@@ -32,6 +32,11 @@ class VirDFS {
 	private static $_revert = 0;
 	
 	/**
+	 * @var Array
+	 */
+	private static $_cache = array();
+
+	/**
 	 * @var boolean / int
 	 */
 	private static $_is_error = false;
@@ -137,11 +142,8 @@ class VirDFS {
 			if(!self::isExists($path))
 				return NULL;
 			
-			$list = NULL;
-			
-			$sth = self::$_record->prepare('SELECT path,type,size,hash,time,mime,version FROM files_' . self::$_username . ' WHERE id=:id');
-			$sth->execute(array(':id' => md5($path)));
-			$result = $sth->fetch();
+			$result = self::$_cache[md5($path)];
+			$list = array();
 			
 			if('file' == $result['type'])
 				return $list[$result['path']] = array(
@@ -193,9 +195,7 @@ class VirDFS {
 	// 		return FALSE;
 		
 	// 	// Check File version is exists
-	// 	$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE id=:id');
-	// 	$sth->execute(array(':id' => md5($path)));
-	// 	$result = $sth->fetch();
+	// 	$result = self::$_cache[md5($path)];
 		
 	// 	// Check file version exists
 	// 	if($result['version'] < $version && $version < 0)
@@ -363,9 +363,7 @@ class VirDFS {
 		if(!file_exists($real_path) || !self::isExists($sim_path))
 			return FALSE;
 
-		$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE id=:id');
-		$sth->execute(array(':id' => md5($sim_path)));
-		$result = $sth->fetch();
+		$result = self::$_cache[md5($sim_path)];
 		
 		// if file is same
 		if(hash_file('md5', $real_path) == $result['hash'])
@@ -409,9 +407,7 @@ class VirDFS {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		$sth = self::$_record->prepare('SELECT version,revision,mime,unique_hash FROM files_' . self::$_username . ' WHERE id=:id');
-		$sth->execute(array(':id' => md5($path)));
-		$result = $sth->fetch();
+		$result = self::$_cache[md5($path)];
 		
 		// Check file version exists
 		if(NULL !== $version) {
@@ -454,12 +450,10 @@ class VirDFS {
 		if(!self::isExists($path))
 			return FALSE;
 		
-		if('file' == self::type($path)) {
-			// Load file information
-			$sth = self::$_record->prepare('SELECT version,revision,unique_hash FROM files_' . self::$_username . ' WHERE id=:id');
-			$sth->execute(array(':id' => md5($path)));
-			$result = $sth->fetch();
-			
+		$result = self::$_cache[md5($path)];
+
+		if('file' == $result['type']) {
+
 			// Delete all file version
 			for($index = $result['version'];$index >= ($result['version']-$result['revision']), $index >= 0;$index--)
 				Parliament::delete(self::$_username . '_' . $result['unique_hash'] . '_' . $index);
@@ -506,11 +500,9 @@ class VirDFS {
 	public static function info($path) {
 		if(!self::isExists($path))
 			return FALSE;
-		
-		$sth = self::$_record->prepare('SELECT type,size,hash,time,version FROM files_' . self::$_username . ' WHERE id=:id');
-		$sth->execute(array(':id' => md5($path)));
-		$result = $sth->fetch();
-		
+
+		$result = self::$_cache[md5($path)];
+
 		if('file' == $result['type'])
 			$info = array(
 				'type' => $result['type'],
@@ -520,7 +512,7 @@ class VirDFS {
 				'version' => $result['version']
 			);
 		else
-			$info = array('type' => $result['type']);
+			$info = array('type' => 'dir');
 		
 		return $info;
 	}
@@ -531,11 +523,13 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function type($path) {
-		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE id=:id');
-		$sth->execute(array(':id' => md5($path)));
-		$result = $sth->fetch();
+		$hash = md5($path);
+		self::cache($hash);
 		
-		return isset($result['type']) ? $result['type'] : NULL;
+		if(isset(self::$_cache[$hash]))
+			return self::$_cache[$hash]['type'];
+		else
+			return NULL;
 	}
 	
 	/**
@@ -544,10 +538,13 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isDir($path) {
-		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE id=:id AND type="dir"');
-		$sth->execute(array(':id' => md5($path)));
+		$hash = md5($path);
+		self::cache($hash);
 		
-		return $sth->fetch() != NULL;
+		if(isset(self::$_cache[$hash]))
+			return self::$_cache[$hash]['type'] == 'dir';
+		else
+			return NULL;
 	}
 	
 	/**
@@ -556,10 +553,13 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isFile($path) {
-		$sth = self::$_record->prepare('SELECT type FROM files_' . self::$_username . ' WHERE id=:id AND type="file"');
-		$sth->execute(array(':id' => md5($path)));
-		
-		return $sth->fetch() != NULL;
+		$hash = md5($path);
+		self::cache($hash);
+
+		if(isset(self::$_cache[$hash]))
+			return self::$_cache[$hash]['type'] == 'file';
+		else
+			return NULL;
 	}
 	
 	/**
@@ -568,12 +568,26 @@ class VirDFS {
 	 * @param string
 	 */
 	public static function isExists($path) {
-		$sth = self::$_record->prepare('SELECT path FROM files_' . self::$_username . ' WHERE id=:id');
-		$sth->execute(array(':id' => md5($path)));
-		
-		return count($sth->fetchAll()) != 0;
+		$hash = md5($path);
+		self::cache($hash);
+
+		return isset(self::$_cache[$hash]);
 	}
 	
+	/**
+	 * Create Cache Row
+	 */
+	public static function cache($hash) {
+		if(!isset(self::$_cache[$hash])) {
+			$sth = self::$_record->prepare('SELECT * FROM files_' . self::$_username . ' WHERE id=:id');
+			$sth->execute(array(':id' => $hash));
+
+			$tmp = $sth->fetchAll(PDO::FETCH_ASSOC);
+			if(isset($tmp[0]))
+				self::$_cache[$hash] = $tmp[0];
+		}
+	}
+
 	/**
 	 * Check whether an error occurred
 	 * 
