@@ -1,17 +1,16 @@
-RNFileSystem
-============
+Rnfs
+====
 
-### Description
+The RESTful Network File System
 
-RNFileSystem is a RESTful Network File System
+## Getting Started
 
 ### Requirement
 
-* [CLx Framework](https://github.com/ScarWu/CLx)
-* Apache or Nginx + php-fpm or Nginx + hiphop-php (optional)
 * PHP 5.3+
-* MySQL and SQLite3
+* MySQL
+* Apache or Nginx + php-fpm
 
-### Status
+## Notice
 
-Unstable
+This project only for research use
